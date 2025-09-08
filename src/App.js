@@ -17,7 +17,7 @@ const App = () => {
     
     try {
       // Connect to Socket.io server
-      const socketConnection = io('http://localhost:3001', {
+      const socketConnection = io('https://backend-chi-six-70.vercel.app', {
         transports: ['websocket', 'polling'],
         timeout: 20000,
         reconnection: true,
