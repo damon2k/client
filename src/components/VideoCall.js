@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Video, VideoOff, Mic, MicOff, PhoneOff, Users, AlertCircle, Settings, Wifi } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, PhoneOff, Users, AlertCircle } from 'lucide-react';
 import DebugLogger from './DebugLogger';
 
 // WebRTC Configuration with STUN and TURN servers
@@ -28,7 +28,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
-  const statsInterval = useRef(null);
+  const userInfoTimeoutRef = useRef(null);
   
   // State management
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -39,25 +39,12 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const [logs, setLogs] = useState([]);
   const [showDebugLogs, setShowDebugLogs] = useState(false);
   const [remoteUserConnected, setRemoteUserConnected] = useState(false);
-  
-  // Network and quality stats
-  const [networkStats, setNetworkStats] = useState({
-    bandwidth: 0,
-    packetLoss: 0,
-    latency: 0,
-    videoResolution: '',
-    frameRate: 0,
-    networkStrength: 4 // 0-4 bars
-  });
+  const [showUserInfo, setShowUserInfo] = useState(false);
   
   // Remote user states
   const [remoteAudioEnabled, setRemoteAudioEnabled] = useState(true);
   const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(true);
-  
-  // Participants (for future expansion)
-  const [participants] = useState([
-    { id: 'local', name: 'You (Host)', status: 'Connected', isLocal: true }
-  ]);
+  const [remoteUserName, setRemoteUserName] = useState('Guest User');
   
   // Debug logging function
   const addLog = useCallback((message, type = 'info') => {
@@ -66,88 +53,20 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     setLogs(prev => [...prev.slice(-20), { message, timestamp, type }]);
   }, []);
   
-  // Network strength calculation based on stats
-  const calculateNetworkStrength = useCallback((stats) => {
-    const { bandwidth, packetLoss, latency } = stats;
-    let strength = 4;
+  // Show user info overlay temporarily
+  const showUserInfoTemporarily = useCallback(() => {
+    setShowUserInfo(true);
     
-    // Reduce strength based on packet loss
-    if (packetLoss > 5) strength = Math.min(strength, 2);
-    else if (packetLoss > 2) strength = Math.min(strength, 3);
+    // Clear existing timeout
+    if (userInfoTimeoutRef.current) {
+      clearTimeout(userInfoTimeoutRef.current);
+    }
     
-    // Reduce strength based on latency
-    if (latency > 300) strength = Math.min(strength, 1);
-    else if (latency > 150) strength = Math.min(strength, 2);
-    else if (latency > 100) strength = Math.min(strength, 3);
-    
-    // Reduce strength based on bandwidth
-    if (bandwidth < 100) strength = Math.min(strength, 1);
-    else if (bandwidth < 500) strength = Math.min(strength, 2);
-    else if (bandwidth < 1000) strength = Math.min(strength, 3);
-    
-    return Math.max(strength, 1); // Minimum 1 bar
+    // Hide after 4 seconds
+    userInfoTimeoutRef.current = setTimeout(() => {
+      setShowUserInfo(false);
+    }, 4000);
   }, []);
-  
-  // Get WebRTC stats
-  const getWebRTCStats = useCallback(async () => {
-    if (!peerConnectionRef.current || connectionState !== 'connected') return;
-    
-    try {
-      const stats = await peerConnectionRef.current.getStats();
-      let bandwidth = 0, packetLoss = 0, latency = 0;
-      let videoResolution = '', frameRate = 0;
-      
-      stats.forEach(report => {
-        if (report.type === 'inbound-rtp' && report.mediaType === 'video') {
-          bandwidth = Math.round((report.bytesReceived * 8) / 1000); // Convert to kbps
-          frameRate = report.framesPerSecond || 0;
-          if (report.frameWidth && report.frameHeight) {
-            videoResolution = `${report.frameWidth}x${report.frameHeight}`;
-          }
-        }
-        
-        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
-          latency = report.currentRoundTripTime ? Math.round(report.currentRoundTripTime * 1000) : 0;
-        }
-        
-        if (report.type === 'transport') {
-          packetLoss = report.packetsLost ? (report.packetsLost / report.packetsSent) * 100 : 0;
-        }
-      });
-      
-      const newStats = {
-        bandwidth,
-        packetLoss: Math.round(packetLoss * 100) / 100,
-        latency,
-        videoResolution,
-        frameRate: Math.round(frameRate),
-        networkStrength: calculateNetworkStrength({ bandwidth, packetLoss, latency })
-      };
-      
-      setNetworkStats(newStats);
-    } catch (error) {
-      addLog(`Error getting WebRTC stats: ${error.message}`, 'error');
-    }
-  }, [connectionState, addLog, calculateNetworkStrength]);
-  
-  // Start stats monitoring
-  useEffect(() => {
-    if (isConnected && remoteUserConnected) {
-      statsInterval.current = setInterval(getWebRTCStats, 2000);
-      addLog('Started WebRTC stats monitoring');
-    } else {
-      if (statsInterval.current) {
-        clearInterval(statsInterval.current);
-        statsInterval.current = null;
-      }
-    }
-    
-    return () => {
-      if (statsInterval.current) {
-        clearInterval(statsInterval.current);
-      }
-    };
-  }, [isConnected, remoteUserConnected, getWebRTCStats, addLog]);
   
   // Initialize media stream
   const initializeMediaStream = useCallback(async () => {
@@ -215,6 +134,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       if (remoteVideoRef.current && event.streams[0]) {
         remoteVideoRef.current.srcObject = event.streams[0];
         setRemoteUserConnected(true);
+        showUserInfoTemporarily();
       }
     };
     
@@ -229,6 +149,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
           setIsConnected(true);
           setError(null);
           addLog('WebRTC connection established successfully!', 'success');
+          showUserInfoTemporarily();
           break;
         case 'disconnected':
           setIsConnected(false);
@@ -265,7 +186,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     };
     
     return pc;
-  }, [roomId, socket, addLog]);
+  }, [roomId, socket, addLog, showUserInfoTemporarily]);
   
   // Handle offer creation and sending
   const createOffer = useCallback(async () => {
@@ -403,6 +324,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       addLog(`Remote user media state changed: audio=${data.audio}, video=${data.video}`);
       setRemoteAudioEnabled(data.audio);
       setRemoteVideoEnabled(data.video);
+      showUserInfoTemporarily();
     };
     
     // Register socket listeners
@@ -424,7 +346,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       socket.off('user-left', handleUserLeft);
       socket.off('media-state-change', handleMediaStateChange);
     };
-  }, [socket, roomId, createOffer, createAnswer, initializeWebRTC, addLog]);
+  }, [socket, roomId, createOffer, createAnswer, initializeWebRTC, addLog, showUserInfoTemporarily]);
   
   // Toggle audio
   const toggleAudio = useCallback(() => {
@@ -480,8 +402,8 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       addLog('Peer connection closed');
     }
     
-    if (statsInterval.current) {
-      clearInterval(statsInterval.current);
+    if (userInfoTimeoutRef.current) {
+      clearTimeout(userInfoTimeoutRef.current);
     }
     
     if (socket) {
@@ -502,13 +424,13 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
       }
-      if (statsInterval.current) {
-        clearInterval(statsInterval.current);
+      if (userInfoTimeoutRef.current) {
+        clearTimeout(userInfoTimeoutRef.current);
       }
     };
   }, [addLog]);
   
-  // Connection status indicator
+  // Connection status indicator color
   const getConnectionStatusColor = () => {
     switch (connectionState) {
       case 'connected': return '#10b981';
@@ -518,277 +440,160 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     }
   };
   
-  // Network bars component
-  const NetworkBars = ({ strength }) => (
-    <div className="network-bars">
-      {[1, 2, 3, 4].map(bar => (
-        <div
-          key={bar}
-          className={`network-bar ${bar <= strength ? 'active' : ''}`}
-        />
-      ))}
-    </div>
-  );
-  
   // Get participant avatar (first letter of name)
   const getParticipantAvatar = (name) => {
     return name.charAt(0).toUpperCase();
   };
   
-  // Get quality metric color
-  const getQualityColor = (value, thresholds) => {
-    if (value >= thresholds.good) return 'good';
-    if (value <= thresholds.poor) return 'poor';
-    return '';
-  };
-  
   return (
-    <div className="video-call facetime-style">
-      {/* Optional Navigation Sidebar */}
-      <div className="nav-sidebar">
-        {/* Navigation items can go here */}
-      </div>
-      
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Header */}
-        <div className="video-call-header">
-          <div className="room-info">
+    <div className="video-call">
+      {/* Header */}
+      <div className="video-call-header">
+        <div className="room-info">
+          <div className="room-id">Room {roomId}</div>
+          <div className="connection-state">
             <div 
               className={`connection-indicator ${connectionState}`}
               style={{ backgroundColor: getConnectionStatusColor() }}
             />
-            <span className="room-id">Room: {roomId}</span>
-            <span className="connection-state">({connectionState})</span>
-          </div>
-          
-          <div className="header-controls">
-            <button
-              onClick={() => setShowDebugLogs(!showDebugLogs)}
-              className="debug-toggle"
-            >
-              Debug {showDebugLogs ? 'ON' : 'OFF'}
-            </button>
+            {connectionState}
           </div>
         </div>
         
-        {/* Error Display */}
-        {error && (
-          <div className="error-banner">
-            <AlertCircle className="error-icon" />
-            {error}
-          </div>
-        )}
-        
-        {/* Video Content */}
-        <div className="video-content">
-          {/* Main Video Area */}
-          <div className="main-video-area">
-            <div className="remote-video-fullscreen">
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="video-element"
-              />
-              
-              {/* Waiting state */}
-              {!remoteUserConnected && (
-                <div className="waiting-state">
-                  <Users className="waiting-icon" />
-                  <h3>Waiting for another user to join...</h3>
-                  <p>Share the room ID: <strong>{roomId}</strong></p>
-                </div>
-              )}
-              
-              {/* Remote video off state */}
-              {remoteUserConnected && !remoteVideoEnabled && (
-                <div className="remote-video-off">
-                  <VideoOff className="video-off-icon" />
-                  <p>Camera is off</p>
-                </div>
-              )}
-            </div>
+        <div className="header-controls">
+          <button
+            onClick={() => setShowDebugLogs(!showDebugLogs)}
+            className="debug-toggle"
+          >
+            Debug {showDebugLogs ? 'ON' : 'OFF'}
+          </button>
+        </div>
+      </div>
+      
+      {/* Error Display */}
+      {error && (
+        <div className="error-banner">
+          <AlertCircle className="error-icon" />
+          {error}
+        </div>
+      )}
+      
+      {/* Video Content - Full Screen */}
+      <div className="video-content">
+        <div className="main-video-area">
+          {/* Remote Video - Full Screen */}
+          <div className="remote-video-fullscreen">
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="video-element"
+              style={{ display: remoteUserConnected && remoteVideoEnabled ? 'block' : 'none' }}
+            />
             
-            {/* Controls */}
-            <div className="video-controls facetime-controls">
-              <div className="controls-container">
-                <button
-                  onClick={toggleAudio}
-                  className={`control-button ${!isAudioEnabled ? 'disabled' : ''}`}
-                  title={isAudioEnabled ? 'Mute' : 'Unmute'}
-                >
-                  {isAudioEnabled ? <Mic /> : <MicOff />}
-                </button>
-                
-                <button
-                  onClick={toggleVideo}
-                  className={`control-button ${!isVideoEnabled ? 'disabled' : ''}`}
-                  title={isVideoEnabled ? 'Turn off camera' : 'Turn on camera'}
-                >
-                  {isVideoEnabled ? <Video /> : <VideoOff />}
-                </button>
-                
-                <button
-                  onClick={endCall}
-                  className="control-button end-call"
-                  title="End call"
-                >
-                  <PhoneOff />
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Right Sidebar */}
-          <div className="right-sidebar">
-            {/* Sidebar Header */}
-            <div className="sidebar-header">
-              <div className="sidebar-title">Meeting Room</div>
-              <div className="sidebar-subtitle">Room ID: {roomId}</div>
-            </div>
-            
-            {/* Local Video Preview */}
-            <div className="local-video-section">
-              <div className="local-video-label">Your Camera</div>
-              <div className="local-video-preview">
-                <video
-                  ref={localVideoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="video-element"
-                />
-                
-                {/* Local mute indicator */}
-                {!isAudioEnabled && (
-                  <div className="local-mute-indicator">
-                    <MicOff size={16} />
-                  </div>
-                )}
-                
-                {/* Video off overlay */}
-                {!isVideoEnabled && (
-                  <div className="local-video-off">
-                    <VideoOff className="video-off-icon" />
-                    <span>You</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Connection Info */}
-            {isConnected && remoteUserConnected && (
-              <div className="connection-info">
-                <div className="quality-metrics">
-                  <div className="quality-metric">
-                    <span className="quality-metric-label">Resolution:</span>
-                    <span className="quality-metric-value">
-                      {networkStats.videoResolution || 'N/A'}
-                    </span>
-                  </div>
-                  
-                  <div className="quality-metric">
-                    <span className="quality-metric-label">Frame Rate:</span>
-                    <span className="quality-metric-value">
-                      {networkStats.frameRate > 0 ? `${networkStats.frameRate} fps` : 'N/A'}
-                    </span>
-                  </div>
-                  
-                  <div className="quality-metric">
-                    <span className="quality-metric-label">Bandwidth:</span>
-                    <span className={`quality-metric-value ${getQualityColor(networkStats.bandwidth, { good: 1000, poor: 500 })}`}>
-                      {networkStats.bandwidth} kbps
-                    </span>
-                  </div>
-                  
-                  <div className="quality-metric">
-                    <span className="quality-metric-label">Latency:</span>
-                    <span className={`quality-metric-value ${getQualityColor(150 - networkStats.latency, { good: 100, poor: 50 })}`}>
-                      {networkStats.latency > 0 ? `${networkStats.latency}ms` : 'N/A'}
-                    </span>
-                  </div>
-                  
-                  <div className="quality-metric">
-                    <span className="quality-metric-label">Network:</span>
-                    <div className="network-indicator">
-                      <NetworkBars strength={networkStats.networkStrength} />
-                      <span className="quality-metric-value">
-                        {networkStats.networkStrength}/4 bars
-                      </span>
-                    </div>
-                  </div>
-                </div>
+            {/* Waiting state */}
+            {!remoteUserConnected && (
+              <div className="waiting-state">
+                <Users className="waiting-icon" />
+                <h3>Waiting for another user...</h3>
+                <p>Share room ID: <strong>{roomId}</strong></p>
               </div>
             )}
             
-            {/* Participants Section */}
-            <div className="participants-section">
-              <div className="participants-list">
-                {participants.map(participant => (
-                  <div key={participant.id} className="participant-item">
-                    <div className="participant-avatar">
-                      {getParticipantAvatar(participant.name)}
-                    </div>
-                    <div className="participant-info">
-                      <div className="participant-name">{participant.name}</div>
-                      <div className="participant-status">{participant.status}</div>
-                    </div>
-                    <div className="participant-controls">
-                      {participant.isLocal && (
-                        <>
-                          <button 
-                            className={`participant-control-btn ${!isAudioEnabled ? 'muted' : ''}`}
-                            title={isAudioEnabled ? 'Muted' : 'Unmuted'}
-                          >
-                            {isAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-                          </button>
-                          <button 
-                            className={`participant-control-btn ${!isVideoEnabled ? 'muted' : ''}`}
-                            title={isVideoEnabled ? 'Camera On' : 'Camera Off'}
-                          >
-                            {isVideoEnabled ? <Video size={16} /> : <VideoOff size={16} />}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Remote participant */}
-                {remoteUserConnected && (
-                  <div className="participant-item">
-                    <div className="participant-avatar">
-                      G
-                    </div>
-                    <div className="participant-info">
-                      <div className="participant-name">Guest</div>
-                      <div className="participant-status">Connected</div>
-                    </div>
-                    <div className="participant-controls">
-                      <button 
-                        className={`participant-control-btn ${!remoteAudioEnabled ? 'muted' : ''}`}
-                        title={remoteAudioEnabled ? 'Audio On' : 'Audio Off'}
-                      >
-                        {remoteAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-                      </button>
-                      <button 
-                        className={`participant-control-btn ${!remoteVideoEnabled ? 'muted' : ''}`}
-                        title={remoteVideoEnabled ? 'Camera On' : 'Camera Off'}
-                      >
-                        {remoteVideoEnabled ? <Video size={16} /> : <VideoOff size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                )}
+            {/* Remote video off state */}
+            {remoteUserConnected && !remoteVideoEnabled && (
+              <div className="remote-video-off">
+                <VideoOff className="video-off-icon" />
+                <p>Camera is off</p>
               </div>
+            )}
+          </div>
+          
+          {/* Local Video - PiP Style */}
+          <div className="local-video-pip">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="video-element"
+              style={{ display: isVideoEnabled ? 'block' : 'none' }}
+            />
+            
+            {/* Local mute indicator */}
+            {!isAudioEnabled && (
+              <div className="local-mute-indicator">
+                <MicOff size={16} />
+              </div>
+            )}
+            
+            {/* Local video off overlay */}
+            {!isVideoEnabled && (
+              <div className="local-video-off">
+                <VideoOff className="video-off-icon" />
+                <span>You</span>
+              </div>
+            )}
+          </div>
+          
+          {/* User Info Overlay - Appears on main video temporarily */}
+          {remoteUserConnected && (
+            <div className={`user-info-overlay ${!showUserInfo ? 'hidden' : ''}`}>
+              <div className="user-info-avatar">
+                {getParticipantAvatar(remoteUserName)}
+              </div>
+              <div className="user-info-details">
+                <div className="user-name">{remoteUserName}</div>
+                <div className="user-status">
+                  <div 
+                    className={`connection-indicator ${connectionState}`}
+                    style={{ backgroundColor: getConnectionStatusColor() }}
+                  />
+                  {isConnected ? 'Connected' : 'Connecting...'}
+                  {!remoteAudioEnabled && ' • Muted'}
+                  {!remoteVideoEnabled && ' • Camera off'}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Controls */}
+          <div className="video-controls">
+            <div className="controls-container">
+              <button
+                onClick={toggleAudio}
+                className={`control-button ${!isAudioEnabled ? 'disabled' : ''}`}
+                title={isAudioEnabled ? 'Mute' : 'Unmute'}
+              >
+                {isAudioEnabled ? <Mic /> : <MicOff />}
+              </button>
+              
+              <button
+                onClick={toggleVideo}
+                className={`control-button ${!isVideoEnabled ? 'disabled' : ''}`}
+                title={isVideoEnabled ? 'Turn off camera' : 'Turn on camera'}
+              >
+                {isVideoEnabled ? <Video /> : <VideoOff />}
+              </button>
+              
+              <button
+                onClick={endCall}
+                className="control-button end-call"
+                title="End call"
+              >
+                <PhoneOff />
+              </button>
             </div>
           </div>
         </div>
       </div>
       
       {/* Debug Logger */}
-      <DebugLogger logs={logs} isVisible={showDebugLogs} />
+      <DebugLogger 
+        logs={logs} 
+        isVisible={showDebugLogs} 
+        onClose={() => setShowDebugLogs(false)}
+      />
     </div>
   );
 };
