@@ -29,7 +29,17 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
   const userInfoTimeoutRef = useRef(null);
-  
+
+  // --- Start of Added Code ---
+
+  // Refs and state for draggable PiP
+  const localVideoPipRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [pipPosition, setPipPosition] = useState({ x: 20, y: 80 }); // Initial position
+  const dragStartRef = useRef({ x: 0, y: 0, pipX: 0, pipY: 0 });
+
+  // --- End of Added Code ---
+
   // State management
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
@@ -57,19 +67,84 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const showUserInfoTemporarily = useCallback(() => {
     setShowUserInfo(true);
     
-    // Clear existing timeout
     if (userInfoTimeoutRef.current) {
       clearTimeout(userInfoTimeoutRef.current);
     }
     
-    // Hide after 4 seconds
     userInfoTimeoutRef.current = setTimeout(() => {
       setShowUserInfo(false);
     }, 4000);
   }, []);
   
+  // --- Start of Added Code: Draggable PiP Logic ---
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      pipX: pipPosition.x,
+      pipY: pipPosition.y,
+    };
+  };
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      pipX: pipPosition.x,
+      pipY: pipPosition.y,
+    };
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    setPipPosition({
+      x: dragStartRef.current.pipX + dx,
+      y: dragStartRef.current.pipY + dy
+    });
+  }, [isDragging]);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - dragStartRef.current.x;
+    const dy = touch.clientY - dragStartRef.current.y;
+    setPipPosition({
+      x: dragStartRef.current.pipX + dx,
+      y: dragStartRef.current.pipY + dy
+    });
+  }, [isDragging]);
+  
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp, handleTouchMove]);
+
+
+  // --- End of Added Code ---
+
   // Initialize media stream
   const initializeMediaStream = useCallback(async () => {
+    // ... (rest of the function is unchanged)
     try {
       addLog('Requesting media permissions...');
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -103,11 +178,11 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Create peer connection
   const createPeerConnection = useCallback(() => {
+    // ... (rest of the function is unchanged)
     addLog('Creating peer connection with TURN server...');
     addLog(`Using TURN server: turn:16.16.71.145:3478`);
     const pc = new RTCPeerConnection(ICE_SERVERS);
     
-    // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         const candidateStr = event.candidate.candidate;
@@ -128,7 +203,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       }
     };
     
-    // Handle remote stream
     pc.ontrack = (event) => {
       addLog('Received remote stream');
       if (remoteVideoRef.current && event.streams[0]) {
@@ -138,7 +212,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       }
     };
     
-    // Handle connection state changes
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState;
       addLog(`Connection state changed: ${state}`);
@@ -172,7 +245,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       }
     };
     
-    // Handle ICE connection state changes
     pc.oniceconnectionstatechange = () => {
       const state = pc.iceConnectionState;
       addLog(`ICE connection state: ${state}`);
@@ -190,6 +262,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Handle offer creation and sending
   const createOffer = useCallback(async () => {
+    // ... (rest of the function is unchanged)
     if (!peerConnectionRef.current) {
       addLog('Cannot create offer: peer connection not initialized', 'error');
       return;
@@ -216,6 +289,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Handle answer creation and sending
   const createAnswer = useCallback(async (offer) => {
+    // ... (rest of the function is unchanged)
     if (!peerConnectionRef.current) {
       addLog('Cannot create answer: peer connection not initialized', 'error');
       return;
@@ -241,6 +315,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Initialize WebRTC connection
   const initializeWebRTC = useCallback(async () => {
+    // ... (rest of the function is unchanged)
     try {
       addLog('Starting WebRTC initialization with TURN server...');
       
@@ -265,6 +340,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Setup socket event listeners
   useEffect(() => {
+    // ... (rest of the function is unchanged)
     if (!socket) {
       addLog('Socket not available', 'error');
       return;
@@ -327,7 +403,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       showUserInfoTemporarily();
     };
     
-    // Register socket listeners
     socket.on('user-joined', handleUserJoined);
     socket.on('offer', handleOffer);
     socket.on('answer', handleAnswer);
@@ -350,14 +425,14 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Toggle audio
   const toggleAudio = useCallback(() => {
-    if (localStreamRef.current) {
+    // ... (rest of the function is unchanged)
+     if (localStreamRef.current) {
       const audioTrack = localStreamRef.current.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setIsAudioEnabled(audioTrack.enabled);
         addLog(`Audio ${audioTrack.enabled ? 'enabled' : 'disabled'}`);
         
-        // Notify remote user of audio state change
         socket.emit('media-state-change', {
           roomId,
           audio: audioTrack.enabled,
@@ -369,6 +444,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Toggle video
   const toggleVideo = useCallback(() => {
+    // ... (rest of the function is unchanged)
     if (localStreamRef.current) {
       const videoTrack = localStreamRef.current.getVideoTracks()[0];
       if (videoTrack) {
@@ -376,7 +452,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
         setIsVideoEnabled(videoTrack.enabled);
         addLog(`Video ${videoTrack.enabled ? 'enabled' : 'disabled'}`);
         
-        // Notify remote user of video state change
         socket.emit('media-state-change', {
           roomId,
           audio: isAudioEnabled,
@@ -388,6 +463,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // End call
   const endCall = useCallback(() => {
+    // ... (rest of the function is unchanged)
     addLog('Ending call and cleaning up...');
     
     if (localStreamRef.current) {
@@ -416,6 +492,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Cleanup on unmount
   useEffect(() => {
+    // ... (rest of the function is unchanged)
     return () => {
       addLog('Component unmounting, cleaning up resources...');
       if (localStreamRef.current) {
@@ -432,6 +509,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Connection status indicator color
   const getConnectionStatusColor = () => {
+    // ... (rest of the function is unchanged)
     switch (connectionState) {
       case 'connected': return '#10b981';
       case 'connecting': return '#f59e0b';
@@ -440,11 +518,12 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     }
   };
   
-  // Get participant avatar (first letter of name)
+  // Get participant avatar
   const getParticipantAvatar = (name) => {
     return name.charAt(0).toUpperCase();
   };
   
+  // ... (The JSX from `return (` onwards is the same as your original file)
   return (
     <div className="video-call">
       {/* Header */}
@@ -514,9 +593,10 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
             ref={localVideoPipRef}
             className={`local-video-pip ${isDragging ? 'dragging' : ''}`}
             style={{
-              right: 'auto',
-              left: `${pipPosition.x}px`,
-              top: `${pipPosition.y}px`
+              transform: `translate(${pipPosition.x}px, ${pipPosition.y}px)`, // Use transform for positioning
+              position: 'absolute', // Ensure it's absolutely positioned
+              top: 0, // Initial top
+              left: 0 // Initial left
             }}
             onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
