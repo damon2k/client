@@ -382,7 +382,9 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
                     <video ref={remoteVideoRef} srcObject={mainVideoStream} autoPlay playsInline className="video-element" style={{ display: remoteUserConnected ? 'block' : 'none' }} />
                     {!remoteUserConnected && (
                         <div className="waiting-state">
-                            <Users className="waiting-icon" />
+                            <div className="waiting-icon">
+                              <Users size={40} />
+                              </div>
                             <h3>Waiting for another user...</h3>
                             <p>Share room ID: <strong>{roomId}</strong></p>
                         </div>
