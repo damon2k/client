@@ -255,8 +255,22 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     };
   }, [socket, roomId, addLog, initializeMediaStream, createPeerConnection, showUserInfoTemporarily]);
   
-  // Media Controls
-  const toggleAudio = useCallback(() => { /* ... unchanged ... */ }, []);
+  // --- CORRECTED Media Controls ---
+  const toggleAudio = useCallback(() => {
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsAudioEnabled(audioTrack.enabled);
+        socket.emit('media-state-change', {
+          roomId,
+          audio: audioTrack.enabled,
+          video: isVideoEnabled,
+        });
+      }
+    }
+  }, [roomId, isVideoEnabled, socket]);
+
   const toggleVideo = useCallback(() => {
     if (isScreenSharing) return;
     if (localStreamRef.current) {
@@ -264,24 +278,33 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
-        socket.emit('media-state-change', { roomId, audio: isAudioEnabled, video: videoTrack.enabled });
+        socket.emit('media-state-change', {
+          roomId,
+          audio: isAudioEnabled,
+          video: videoTrack.enabled,
+        });
       }
     }
   }, [isScreenSharing, roomId, isAudioEnabled, socket]);
+
   const endCall = useCallback(() => {
-    if (localStreamRef.current) localStreamRef.current.getTracks().forEach(track => track.stop());
+    addLog('Ending call and cleaning up...');
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+    }
     if (peerConnectionRef.current) peerConnectionRef.current.close();
     if (socket) socket.emit('leave-room', roomId);
     onLeaveRoom();
-  }, [roomId, socket, onLeaveRoom]);
+  }, [roomId, socket, onLeaveRoom, addLog]);
 
-  // Stats Polling
+  // --- Stats Polling ---
   const getNetworkQuality = (rtt) => {
     if (rtt < 150) return 'Excellent';
     if (rtt < 300) return 'Good';
     if (rtt < 500) return 'Fair';
     return 'Poor';
   };
+
   useEffect(() => {
     if (isConnected && peerConnectionRef.current) {
       statsIntervalRef.current = setInterval(async () => {
@@ -300,6 +323,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     return () => clearInterval(statsIntervalRef.current);
   }, [isConnected]);
 
+  // --- Component Cleanup ---
   useEffect(() => {
     return () => {
       if (localStreamRef.current) localStreamRef.current.getTracks().forEach(track => track.stop());
