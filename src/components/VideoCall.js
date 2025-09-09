@@ -365,7 +365,18 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const getParticipantAvatar = (name) => name.charAt(0).toUpperCase();
 
   
-    // --- Render JSX ---
+   // --- Render JSX ---
+
+  // Determine which stream goes where based on screen sharing status
+  const mainVideoStream = isScreenSharing ? localStreamRef.current : (remoteVideoRef.current ? remoteVideoRef.current.srcObject : null);
+  const pipVideoStream = isScreenSharing ? (remoteVideoRef.current ? remoteVideoRef.current.srcObject : null) : localStreamRef.current;
+  
+  const isPipMuted = !isScreenSharing;
+  const pipUserLabel = isScreenSharing ? remoteUserName : 'You';
+  const pipAudioMuted = isScreenSharing ? !remoteAudioEnabled : !isAudioEnabled;
+  const pipVideoOff = isScreenSharing ? !remoteVideoEnabled : !isVideoEnabled;
+
+
   return (
     <div className="video-call">
       <div className="video-call-header">
@@ -377,7 +388,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
           </div>
         </div>
         <div className="header-controls">
-          {/* --- STATS DISPLAY MOVED HERE --- */}
           {connectionStats && isConnected && (
             <div className="call-stats-container">
               {connectionStats.network && (
@@ -392,7 +402,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
               )}
             </div>
           )}
-          {/* ----------------------------- */}
           <button onClick={() => setShowDebugLogs(!showDebugLogs)} className="debug-toggle">
             Debug {showDebugLogs ? 'ON' : 'OFF'}
           </button>
@@ -403,8 +412,16 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       
       <div className="video-content">
         <div className="main-video-area">
+          {/* --- Main Video now uses a dynamic source --- */}
           <div className="remote-video-fullscreen">
-            <video ref={remoteVideoRef} autoPlay playsInline className="video-element" style={{ display: remoteUserConnected && remoteVideoEnabled ? 'block' : 'none' }} />
+            <video 
+              ref={remoteVideoRef} // Keep ref for attaching stream
+              srcObject={mainVideoStream} 
+              autoPlay 
+              playsInline 
+              className="video-element" 
+              style={{ display: remoteUserConnected ? 'block' : 'none' }} 
+            />
             {!remoteUserConnected && (
               <div className="waiting-state">
                 <Users className="waiting-icon" />
@@ -412,15 +429,36 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
                 <p>Share room ID: <strong>{roomId}</strong></p>
               </div>
             )}
-            {remoteUserConnected && !remoteVideoEnabled && (
+            {remoteUserConnected && !remoteVideoEnabled && !isScreenSharing && !isRemoteScreenSharing && (
               <div className="remote-video-off"><VideoOff className="video-off-icon" /><p>Camera is off</p></div>
             )}
           </div>
           
-          <div ref={localVideoPipRef} className={`local-video-pip ${isDragging ? 'dragging' : ''}`} style={{ transform: `translate(${pipPosition.x}px, ${pipPosition.y}px)` }} onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}>
-            <video ref={localVideoRef} autoPlay muted playsInline className="video-element" style={{ display: isVideoEnabled || isScreenSharing ? 'block' : 'none' }} />
-            {!isAudioEnabled && (<div className="local-mute-indicator"><MicOff size={16} /></div>)}
-            {!isVideoEnabled && !isScreenSharing && (<div className="local-video-off"><VideoOff className="video-off-icon" /><span>You</span></div>)}
+          {/* --- PiP Video now uses a dynamic source --- */}
+          <div 
+            ref={localVideoPipRef} 
+            className={`local-video-pip ${isDragging ? 'dragging' : ''}`} 
+            style={{ transform: `translate(${pipPosition.x}px, ${pipPosition.y}px)` }} 
+            onMouseDown={handleMouseDown} 
+            onTouchStart={handleTouchStart}
+          >
+            <video 
+              ref={localVideoRef} // Keep ref for initial stream
+              srcObject={pipVideoStream}
+              autoPlay 
+              muted={isPipMuted} 
+              playsInline 
+              className="video-element" 
+              style={{ display: (isScreenSharing && remoteUserConnected) || !isScreenSharing ? 'block' : 'none' }}
+            />
+
+            {pipAudioMuted && (<div className="local-mute-indicator"><MicOff size={16} /></div>)}
+            {pipVideoOff && (
+              <div className="local-video-off">
+                <VideoOff className="video-off-icon" />
+                <span>{pipUserLabel}</span>
+              </div>
+            )}
           </div>
           
           {remoteUserConnected && (
@@ -434,7 +472,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
                   {!remoteAudioEnabled && ' • Muted'}
                   {!remoteVideoEnabled && ' • Camera off'}
                 </div>
-                {/* --- STATS DISPLAY REMOVED FROM HERE --- */}
               </div>
             </div>
           )}
@@ -460,7 +497,5 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       
       <DebugLogger logs={logs} isVisible={showDebugLogs} onClose={() => setShowDebugLogs(false)} />
     </div>
-  );
-};
-
-export default VideoCall;
+  )
+}
