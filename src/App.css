@@ -351,23 +351,32 @@ body {
   z-index: 10;
 }
 
+@keyframes pulse-icon {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 15px 35px rgba(139, 92, 246, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+  }
+}
+
 .waiting-icon {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(360deg, #8b5cf6, #a855f7); /* This is the purple background */
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white; /* This will be the color of the icon inside */
+  color: white;
   box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
-  animation: bounce 2s infinite;
-}
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-10px); }
-  60% { transform: translateY(-5px); }
+  animation: pulse-icon 2s infinite ease-in-out; /* Changed from bounce to pulse-icon */
 }
 
 .waiting-state h3 {
