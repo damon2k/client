@@ -2,16 +2,25 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Video, VideoOff, Mic, MicOff, PhoneOff, Users, AlertCircle } from 'lucide-react';
 import DebugLogger from './DebugLogger';
 
-// WebRTC Configuration with STUN servers
+// WebRTC Configuration with STUN and TURN servers
 const ICE_SERVERS = {
   iceServers: [
+    // Your TURN server from the screenshot
+    {
+      urls: 'stun:16.16.71.145:3478'
+    },
+    {
+      urls: 'turn:16.16.71.145:3478',
+      username: 'testuser',
+      credential: 'a4216be4368cfd6d3c87e060a4b08fd0fa1718762ca42675f107647b7c224488'
+    },
+    // Backup STUN servers
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun.stunprotocol.org:3478' }
   ]
 };
-
 
 const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   // Refs for video elements and WebRTC
@@ -72,12 +81,23 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   
   // Create peer connection
   const createPeerConnection = useCallback(() => {
-    addLog('Creating peer connection with ICE servers...');
+    addLog('Creating peer connection with TURN server...');
+    addLog(`Using TURN server: turn:16.16.71.145:3478`);
     const pc = new RTCPeerConnection(ICE_SERVERS);
     
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
+        // Log candidate type for debugging
+        const candidateStr = event.candidate.candidate;
+        if (candidateStr.includes('typ relay')) {
+          addLog('✅ TURN relay candidate generated!', 'success');
+        } else if (candidateStr.includes('typ srflx')) {
+          addLog('STUN server reflexive candidate generated');
+        } else if (candidateStr.includes('typ host')) {
+          addLog('Host candidate generated');
+        }
+        
         addLog('Sending ICE candidate');
         socket.emit('ice-candidate', {
           roomId,
@@ -138,6 +158,8 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       if (state === 'failed') {
         addLog('ICE connection failed, attempting restart...', 'error');
         pc.restartIce();
+      } else if (state === 'connected') {
+        addLog('✅ ICE connection established!', 'success');
       }
     };
     
@@ -203,7 +225,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   // Initialize WebRTC connection
   const initializeWebRTC = useCallback(async () => {
     try {
-      addLog('Starting WebRTC initialization...');
+      addLog('Starting WebRTC initialization with TURN server...');
       
       // Get media stream first
       const stream = await initializeMediaStream();
