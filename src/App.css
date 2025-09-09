@@ -1153,3 +1153,101 @@ body {
   height: 14px;
   opacity: 0.8;
 }
+/*
+========================================
+  NEW MOBILE RESPONSIVE STYLES
+========================================
+*/
+@media (max-width: 768px) {
+  /* Hide desktop-only elements */
+  .call-stats-container,
+  .debug-toggle {
+    display: none;
+  }
+  
+  /* Simplify header */
+  .video-call-header {
+    background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+    padding: 12px 16px;
+  }
+  
+  /* Reposition PiP to bottom left */
+  .pip-container {
+    top: auto;
+    right: auto;
+    bottom: 110px; /* Position above the controls */
+    left: 16px;
+    transform: none; /* Disable dragging transform on mobile */
+  }
+
+  /* Style the PiP video for mobile */
+  .local-video-pip {
+    width: 90px;
+    height: 120px;
+    border-radius: 12px;
+    cursor: default;
+    transform: none !important; /* Override hover/drag transforms */
+  }
+
+  /* Style and show the mobile stats overlay */
+  .mobile-stats-overlay {
+    display: flex;
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    padding: 3px 5px;
+    font-size: 9px;
+    gap: 6px;
+    color: white;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .mobile-stats-overlay .stat-item {
+    gap: 3px;
+  }
+  .mobile-stats-overlay .lucide {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Adjust user info overlay position */
+  .user-info-overlay {
+    bottom: 110px;
+    left: 16px;
+    right: 16px;
+    padding: 12px;
+  }
+
+  /* New mobile controls layout */
+  .video-controls {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    transform: none;
+    padding: 20px;
+    background: linear-gradient(360deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  }
+
+  .controls-container {
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+    border: none;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .control-button {
+    width: 60px;
+    height: 60px;
+  }
+
+  .control-button.end-call {
+    width: 70px;
+    height: 70px;
+  }
+}
