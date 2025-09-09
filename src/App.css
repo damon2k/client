@@ -331,8 +331,8 @@ body {
 .remote-video-fullscreen .video-element {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  background: transparent;
+  object-fit: contain; /* This fits the video without cropping */
+  background: #000; /* Black background for letterboxing */
 }
 
 /* Waiting State - Center of Screen */

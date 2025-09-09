@@ -47,6 +47,17 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [connectionStats, setConnectionStats] = useState(null);
 
+  // --- Auto-hide error message after 5 seconds ---
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 5000); // Hide error after 5 seconds
+
+      return () => clearTimeout(timer); // Cleanup the timer
+    }
+  }, [error]);
+
   // --- Utility and Logging Functions ---
   const addLog = useCallback((message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString();
@@ -278,7 +289,16 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   }, [socket, roomId, addLog, initializeMediaStream, createPeerConnection, showUserInfoTemporarily]);
   
   // --- Media Controls ---
-  const toggleAudio = useCallback(() => { /* ... unchanged ... */ }, []);
+  const toggleAudio = useCallback(() => {
+    if (localStreamRef.current) {
+        const audioTrack = localStreamRef.current.getAudioTracks()[0];
+        if (audioTrack) {
+          audioTrack.enabled = !audioTrack.enabled;
+          setIsAudioEnabled(audioTrack.enabled);
+          socket.emit('media-state-change', { roomId, audio: audioTrack.enabled, video: isVideoEnabled });
+        }
+      }
+  }, [roomId, isVideoEnabled, socket]);
   const toggleVideo = useCallback(() => {
     if (isScreenSharing) return;
     if (localStreamRef.current) {
@@ -290,7 +310,14 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       }
     }
   }, [isScreenSharing, roomId, isAudioEnabled, socket]);
-  const endCall = useCallback(() => { /* ... unchanged ... */ }, []);
+  const endCall = useCallback(() => {
+    if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (peerConnectionRef.current) peerConnectionRef.current.close();
+    if (socket) socket.emit('leave-room', roomId);
+    onLeaveRoom();
+  }, [roomId, socket, onLeaveRoom]);
 
   // --- Stats Polling Effect ---
   const getNetworkQuality = (rtt) => {
@@ -327,7 +354,14 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     };
   }, []);
   
-  const getConnectionStatusColor = () => { /* ... unchanged ... */ };
+  const getConnectionStatusColor = () => {
+    switch (connectionState) {
+        case 'connected': return '#10b981';
+        case 'connecting': return '#f59e0b';
+        case 'failed': return '#ef4444';
+        default: return '#6b7280';
+    }
+  };
   const getParticipantAvatar = (name) => name.charAt(0).toUpperCase();
 
   // --- Render JSX ---
