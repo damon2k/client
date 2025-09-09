@@ -188,7 +188,7 @@ body {
   font-size: 0.875rem;
 }
 
-/* Video Call Styles - Google Meet Layout */
+/* Video Call Styles - Box Layout */
 .video-call {
   position: relative;
   width: 100%;
@@ -272,34 +272,66 @@ body {
   height: 20px;
 }
 
-/* Main Video Container - Google Meet Style */
+/* Video Grid Container - Centered Box Layout */
 .video-grid {
   position: relative;
   flex: 1;
-  width: 100%;
-  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 40px 120px 40px;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+/* Video Container Base Styles */
+.video-container {
+  position: relative;
+  width: 400px;
+  height: 300px;
+  border-radius: 12px;
   overflow: hidden;
-}
-
-/* Remote Video - Full Screen Main View */
-.remote-video {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
   background: #1a1a1a;
-  border: none !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  border: 3px solid rgba(255, 255, 255, 0.1);
 }
 
-.remote-video .video-element {
+/* Speaking Animation - Purple Glow */
+.video-container.speaking {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.6), 0 8px 24px rgba(0, 0, 0, 0.3);
+  animation: speakingGlow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes speakingGlow {
+  0% { 
+    border-color: #8b5cf6;
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.6), 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  100% { 
+    border-color: #a855f7;
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.8), 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.video-container:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.video-element {
   width: 100%;
   height: 100%;
   object-fit: cover;
   background: #1a1a1a;
 }
 
-.remote-video .video-placeholder {
+.local-video .video-element {
+  transform: scaleX(-1); /* Mirror effect for local video */
+}
+
+.video-placeholder {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -307,93 +339,137 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
   color: #9ca3af;
   text-align: center;
-  background: none;
 }
 
-.remote-video .placeholder-icon {
-  width: 80px;
-  height: 80px;
+.placeholder-icon {
+  width: 48px;
+  height: 48px;
   color: #6b7280;
 }
 
-.remote-video .placeholder-text {
-  font-size: 18px;
+.placeholder-text {
+  font-size: 16px;
   margin: 0;
   color: #9ca3af;
 }
 
-.remote-video .video-label {
+/* Video Overlay Info */
+.video-info {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  backdrop-filter: blur(10px);
-}
-
-/* Local Video - Picture in Picture (Bottom Right) */
-.local-video {
-  position: absolute;
-  bottom: 100px; /* Space for controls */
-  right: 20px;
-  width: 240px;
-  height: 180px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  border: 3px solid rgba(255, 255, 255, 0.1) !important;
-  z-index: 5;
-  background: #1a1a1a;
-  transition: all 0.3s ease;
-}
-
-.local-video:hover {
-  transform: scale(1.05);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-}
-
-.local-video .video-element {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scaleX(-1); /* Mirror effect for local video */
-}
-
-.local-video .video-placeholder {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+  padding: 12px;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.video-label {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.video-stats {
+  display: flex;
   align-items: center;
   gap: 8px;
-  color: #9ca3af;
-  background: none;
 }
 
-.local-video .placeholder-icon {
-  width: 32px;
-  height: 32px;
-  color: #6b7280;
+/* Mute Indicator */
+.mute-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(239, 68, 68, 0.9);
+  border-radius: 50%;
+  color: white;
 }
 
-.local-video .video-label {
+.mute-indicator svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Network Strength Indicator */
+.network-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: white;
+  font-size: 12px;
+}
+
+.network-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 12px;
+}
+
+.network-bar {
+  width: 2px;
+  background: #6b7280;
+  transition: background-color 0.3s;
+}
+
+.network-bar.active {
+  background: #10b981;
+}
+
+.network-bar:nth-child(1) { height: 3px; }
+.network-bar:nth-child(2) { height: 6px; }
+.network-bar:nth-child(3) { height: 9px; }
+.network-bar:nth-child(4) { height: 12px; }
+
+/* Speaking Indicator */
+.speaking-indicator {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background: rgba(0, 0, 0, 0.8);
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(139, 92, 246, 0.9);
   color: white;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 12px;
   font-size: 12px;
+  font-weight: 500;
   backdrop-filter: blur(10px);
+}
+
+.speaking-wave {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 12px;
+}
+
+.speaking-wave-bar {
+  width: 2px;
+  background: white;
+  border-radius: 1px;
+  animation: speakingWave 0.8s ease-in-out infinite alternate;
+}
+
+.speaking-wave-bar:nth-child(1) { animation-delay: 0s; }
+.speaking-wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.speaking-wave-bar:nth-child(3) { animation-delay: 0.2s; }
+
+@keyframes speakingWave {
+  0% { height: 4px; opacity: 0.5; }
+  100% { height: 12px; opacity: 1; }
 }
 
 /* Video Controls - Bottom Center */
@@ -559,12 +635,28 @@ body {
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .video-grid {
+    gap: 20px;
+    padding: 90px 20px 130px 20px;
+  }
+  
+  .video-container {
+    width: 350px;
+    height: 263px;
+  }
+}
+
 @media (max-width: 768px) {
-  .local-video {
-    width: 120px;
-    height: 90px;
-    bottom: 120px;
-    right: 15px;
+  .video-grid {
+    flex-direction: column;
+    gap: 15px;
+    padding: 80px 15px 130px 15px;
+  }
+  
+  .video-container {
+    width: 300px;
+    height: 225px;
   }
   
   .video-call-header {
@@ -572,15 +664,6 @@ body {
     left: 10px;
     right: 10px;
     padding: 8px 12px;
-  }
-  
-  .remote-video .placeholder-icon {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .remote-video .placeholder-text {
-    font-size: 16px;
   }
   
   .controls-container {
@@ -600,11 +683,9 @@ body {
 }
 
 @media (max-width: 480px) {
-  .local-video {
-    width: 100px;
-    height: 75px;
-    bottom: 110px;
-    right: 10px;
+  .video-container {
+    width: 280px;
+    height: 210px;
   }
   
   .controls-container {
