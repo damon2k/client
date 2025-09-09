@@ -75,10 +75,36 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     dragStartRef.current = { mouseX: clientX, mouseY: clientY, pipX: pipPosition.x, pipY: pipPosition.y };
   }, [pipPosition]);
   const handleDragMove = useCallback((clientX, clientY) => {
-    if (!isDragging) return;
+    if (!isDragging || !localVideoPipRef.current) return;
+
     const dx = clientX - dragStartRef.current.mouseX;
     const dy = clientY - dragStartRef.current.mouseY;
-    setPipPosition({ x: dragStartRef.current.pipX + dx, y: dragStartRef.current.pipY + dy });
+    
+    const newX = dragStartRef.current.pipX + dx;
+    const newY = dragStartRef.current.pipY + dy;
+
+    // Get screen and element dimensions for boundary checks
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const pipWidth = localVideoPipRef.current.offsetWidth;
+    const pipHeight = localVideoPipRef.current.offsetHeight;
+    
+    // Define the initial CSS position (top: 80px, right: 20px)
+    const initialTop = 80;
+    const initialRight = 20;
+    const padding = 16; // A small gap from the edges
+
+    // Calculate the boundaries for the transform offset
+    const minOffsetX = -(screenWidth - pipWidth - initialRight - padding);
+    const maxOffsetX = initialRight - padding;
+    const minOffsetY = -initialTop + padding;
+    const maxOffsetY = screenHeight - pipHeight - initialTop - padding;
+
+    // Clamp the new position within the boundaries
+    const clampedX = Math.max(minOffsetX, Math.min(newX, maxOffsetX));
+    const clampedY = Math.max(minOffsetY, Math.min(newY, maxOffsetY));
+
+    setPipPosition({ x: clampedX, y: clampedY });
   }, [isDragging]);
   const handleDragEnd = useCallback(() => setIsDragging(false), []);
   const handleMouseDown = (e) => { e.preventDefault(); handleDragStart(e.clientX, e.clientY); };
