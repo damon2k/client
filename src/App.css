@@ -1101,3 +1101,28 @@ body {
 .local-video-pip.dragging {
   transition: none; /* Disable transition during drag for a snappy response */
 }
+/* New styles for Stats and Screen Share */
+.user-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-item .lucide {
+  width: 12px;
+  height: 12px;
+}
+
+.control-button.active {
+  background: #3b82f6; /* A blue color to indicate active state */
+  border-color: rgba(59, 130, 246, 0.5);
+}
