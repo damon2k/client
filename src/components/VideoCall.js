@@ -364,7 +364,8 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   };
   const getParticipantAvatar = (name) => name.charAt(0).toUpperCase();
 
-  // --- Render JSX ---
+  
+    // --- Render JSX ---
   return (
     <div className="video-call">
       <div className="video-call-header">
@@ -376,6 +377,22 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
           </div>
         </div>
         <div className="header-controls">
+          {/* --- STATS DISPLAY MOVED HERE --- */}
+          {connectionStats && isConnected && (
+            <div className="call-stats-container">
+              {connectionStats.network && (
+                <div className="stat-item" title={`Round Trip Time: ${connectionStats.network.rtt.toFixed(0)}ms`}>
+                  <Signal size={14} /> {connectionStats.network.quality}
+                </div>
+              )}
+              {connectionStats.video && (
+                <div className="stat-item" title={`Frames Per Second: ${connectionStats.video.fps || 0}`}>
+                  <Clapperboard size={14} /> {connectionStats.video.width}x{connectionStats.video.height}
+                </div>
+              )}
+            </div>
+          )}
+          {/* ----------------------------- */}
           <button onClick={() => setShowDebugLogs(!showDebugLogs)} className="debug-toggle">
             Debug {showDebugLogs ? 'ON' : 'OFF'}
           </button>
@@ -417,20 +434,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
                   {!remoteAudioEnabled && ' • Muted'}
                   {!remoteVideoEnabled && ' • Camera off'}
                 </div>
-                {connectionStats && (
-                  <div className="user-stats">
-                    {connectionStats.network && (
-                      <div className="stat-item" title={`Round Trip Time: ${connectionStats.network.rtt.toFixed(0)}ms`}>
-                        <Signal size={12} /> {connectionStats.network.quality}
-                      </div>
-                    )}
-                    {connectionStats.video && (
-                      <div className="stat-item" title={`Frames Per Second: ${connectionStats.video.fps || 0}`}>
-                        <Clapperboard size={12} /> {connectionStats.video.width}x{connectionStats.video.height}
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* --- STATS DISPLAY REMOVED FROM HERE --- */}
               </div>
             </div>
           )}

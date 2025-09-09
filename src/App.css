@@ -1126,3 +1126,30 @@ body {
   background: #3b82f6; /* A blue color to indicate active state */
   border-color: rgba(59, 130, 246, 0.5);
 }
+/* ADD THESE NEW STYLES for the permanent stats display */
+.call-stats-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.9;
+}
+
+.stat-item .lucide {
+  width: 14px;
+  height: 14px;
+  opacity: 0.8;
+}
