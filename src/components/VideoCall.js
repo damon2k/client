@@ -336,6 +336,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const getParticipantAvatar = (name) => name.charAt(0).toUpperCase();
 
   // --- Render JSX ---
+// --- Render JSX ---
   const mainVideoStream = isScreenSharing ? localStreamRef.current : (remoteVideoRef.current ? remoteVideoRef.current.srcObject : null);
   const pipVideoStream = isScreenSharing ? (remoteVideoRef.current ? remoteVideoRef.current.srcObject : null) : localStreamRef.current;
   const isPipMuted = !isScreenSharing;
@@ -343,103 +344,126 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const pipAudioMuted = isScreenSharing ? !remoteAudioEnabled : !isAudioEnabled;
   const pipVideoOff = isScreenSharing ? !remoteVideoEnabled : !isVideoEnabled;
 
+
   return (
     <div className="video-call">
-        <div className="video-call-header">
-            <div className="room-info">
-                <div className="room-id">Room {roomId}</div>
-                <div className="connection-state">
-                    <div className={`connection-indicator ${connectionState}`} style={{ backgroundColor: getConnectionStatusColor() }} />
-                    {connectionState}
-                </div>
-            </div>
-            <div className="header-controls">
-                {connectionStats && isConnected && (
-                    <div className="call-stats-container">
-                        {connectionStats.network && (
-                            <div className="stat-item" title={`Round Trip Time: ${connectionStats.network.rtt.toFixed(0)}ms`}>
-                                <Signal size={14} /> {connectionStats.network.quality}
-                            </div>
-                        )}
-                        {connectionStats.video && (
-                            <div className="stat-item" title={`Frames Per Second: ${connectionStats.video.fps || 0}`}>
-                                <Clapperboard size={14} /> {connectionStats.video.width}x{connectionStats.video.height}
-                            </div>
-                        )}
-                    </div>
-                )}
-                <button onClick={() => setShowDebugLogs(!showDebugLogs)} className="debug-toggle">
-                    Debug {showDebugLogs ? 'ON' : 'OFF'}
-                </button>
-            </div>
+      <div className="video-call-header">
+        <div className="room-info">
+          <div className="room-id">Room {roomId}</div>
+          <div className="connection-state">
+            <div className={`connection-indicator ${connectionState}`} style={{ backgroundColor: getConnectionStatusColor() }} />
+            {connectionState}
+          </div>
         </div>
-
-        {error && <div className="error-banner"><AlertCircle className="error-icon" />{error}</div>}
-
-        <div className="video-content">
-            <div className="main-video-area">
-                <div className="remote-video-fullscreen">
-                    <video ref={remoteVideoRef} srcObject={mainVideoStream} autoPlay playsInline className="video-element" style={{ display: remoteUserConnected ? 'block' : 'none' }} />
-                    {!remoteUserConnected && (
-                        <div className="waiting-state">
-                            <Users className="waiting-icon" />
-                            <h3>Waiting for another user...</h3>
-                            <p>Share room ID: <strong>{roomId}</strong></p>
-                        </div>
-                    )}
-                    {remoteUserConnected && !remoteVideoEnabled && !isScreenSharing && !isRemoteScreenSharing && (
-                        <div className="remote-video-off"><VideoOff className="video-off-icon" /><p>Camera is off</p></div>
-                    )}
-                </div>
-
-                <div ref={localVideoPipRef} className={`local-video-pip ${isDragging ? 'dragging' : ''}`} style={{ transform: `translate(${pipPosition.x}px, ${pipPosition.y}px)` }} onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}>
-                    <video ref={localVideoRef} srcObject={pipVideoStream} autoPlay muted={isPipMuted} playsInline className="video-element" style={{ display: (isScreenSharing && remoteUserConnected) || !isScreenSharing ? 'block' : 'none' }} />
-                    {pipAudioMuted && (<div className="local-mute-indicator"><MicOff size={16} /></div>)}
-                    {pipVideoOff && (
-                        <div className="local-video-off">
-                            <VideoOff className="video-off-icon" />
-                            <span>{pipUserLabel}</span>
-                        </div>
-                    )}
-                </div>
-
-                {remoteUserConnected && (
-                    <div className={`user-info-overlay ${!showUserInfo ? 'hidden' : ''}`}>
-                        <div className="user-info-avatar">{getParticipantAvatar(remoteUserName)}</div>
-                        <div className="user-info-details">
-                            <div className="user-name">{remoteUserName}</div>
-                            <div className="user-status">
-                                <div className={`connection-indicator ${connectionState}`} style={{ backgroundColor: getConnectionStatusColor() }} />
-                                {isConnected ? 'Connected' : 'Connecting...'}
-                                {!remoteAudioEnabled && ' • Muted'}
-                                {!remoteVideoEnabled && ' • Camera off'}
-                            </div>
-                        </div>
-                    </div>
+        <div className="header-controls">
+          <div className="call-stats-container">
+            {connectionStats && isConnected && (
+              <>
+                {connectionStats.network && (
+                  <div className="stat-item" title={`Round Trip Time: ${connectionStats.network.rtt.toFixed(0)}ms`}>
+                    <Signal size={14} /> {connectionStats.network.quality}
+                  </div>
                 )}
-
-                <div className="video-controls">
-                    <div className="controls-container">
-                        <button onClick={toggleAudio} className={`control-button ${!isAudioEnabled ? 'disabled' : ''}`} title={isAudioEnabled ? 'Mute' : 'Unmute'}>
-                            {isAudioEnabled ? <Mic /> : <MicOff />}
-                        </button>
-                        <button onClick={toggleVideo} className={`control-button ${!isVideoEnabled ? 'disabled' : ''}`} disabled={isScreenSharing} title={isVideoEnabled ? 'Turn off camera' : 'Turn on camera'}>
-                            {isVideoEnabled ? <Video /> : <VideoOff />}
-                        </button>
-                        <button onClick={toggleScreenShare} className={`control-button ${isScreenSharing ? 'active' : ''}`} title={isScreenSharing ? 'Stop sharing screen' : 'Share screen'}>
-                            <ScreenShare />
-                        </button>
-                        <button onClick={endCall} className="control-button end-call" title="End call">
-                            <PhoneOff />
-                        </button>
-                    </div>
-                </div>
-            </div>
+                {connectionStats.video && (
+                  <div className="stat-item" title={`Frames Per Second: ${connectionStats.video.fps || 0}`}>
+                    <Clapperboard size={14} /> {connectionStats.video.width}x{connectionStats.video.height}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <button onClick={() => setShowDebugLogs(!showDebugLogs)} className="debug-toggle">
+            Debug {showDebugLogs ? 'ON' : 'OFF'}
+          </button>
         </div>
-
-        <DebugLogger logs={logs} isVisible={showDebugLogs} onClose={() => setShowDebugLogs(false)} />
+      </div>
+      
+      {error && <div className="error-banner"><AlertCircle className="error-icon" />{error}</div>}
+      
+      <div className="video-content">
+        <div className="main-video-area">
+          <div className="remote-video-fullscreen">
+            <video ref={remoteVideoRef} srcObject={mainVideoStream} autoPlay playsInline className="video-element" style={{ display: remoteUserConnected ? 'block' : 'none' }} />
+            {!remoteUserConnected && (
+              <div className="waiting-state">
+                <Users className="waiting-icon" />
+                <h3>Waiting for another user...</h3>
+                <p>Share room ID: <strong>{roomId}</strong></p>
+              </div>
+            )}
+            {remoteUserConnected && !remoteVideoEnabled && !isScreenSharing && !isRemoteScreenSharing && (
+              <div className="remote-video-off"><VideoOff className="video-off-icon" /><p>Camera is off</p></div>
+            )}
+          </div>
+          
+          {/* --- New PiP Container for Mobile Friendliness --- */}
+          <div className="pip-container">
+            <div ref={localVideoPipRef} className={`local-video-pip ${isDragging ? 'dragging' : ''}`} style={{ transform: `translate(${pipPosition.x}px, ${pipPosition.y}px)` }} onMouseDown={handleMouseDown} onTouchStart={handleTouchStart}>
+              <video ref={localVideoRef} srcObject={pipVideoStream} autoPlay muted={isPipMuted} playsInline className="video-element" style={{ display: (isScreenSharing && remoteUserConnected) || !isScreenSharing ? 'block' : 'none' }} />
+              {pipAudioMuted && (<div className="local-mute-indicator"><MicOff size={16} /></div>)}
+              {pipVideoOff && (
+                <div className="local-video-off">
+                  <VideoOff className="video-off-icon" />
+                  <span>{pipUserLabel}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* --- Mobile-only stats overlay, positioned over the PiP video --- */}
+            <div className="mobile-stats-overlay">
+              {connectionStats && isConnected && (
+                <>
+                  {connectionStats.network && (
+                    <div className="stat-item" title={`Round Trip Time: ${connectionStats.network.rtt.toFixed(0)}ms`}>
+                      <Signal /> {connectionStats.network.quality}
+                    </div>
+                  )}
+                  {connectionStats.video && (
+                    <div className="stat-item" title={`Frames Per Second: ${connectionStats.video.fps || 0}`}>
+                      <Clapperboard />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+          
+          {remoteUserConnected && (
+            <div className={`user-info-overlay ${!showUserInfo ? 'hidden' : ''}`}>
+              <div className="user-info-avatar">{getParticipantAvatar(remoteUserName)}</div>
+              <div className="user-info-details">
+                <div className="user-name">{remoteUserName}</div>
+                <div className="user-status">
+                  <div className={`connection-indicator ${connectionState}`} style={{ backgroundColor: getConnectionStatusColor() }}/>
+                  {isConnected ? 'Connected' : 'Connecting...'}
+                  {!remoteAudioEnabled && ' • Muted'}
+                  {!remoteVideoEnabled && ' • Camera off'}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="video-controls">
+            <div className="controls-container">
+              <button onClick={toggleAudio} className={`control-button ${!isAudioEnabled ? 'disabled' : ''}`} title={isAudioEnabled ? 'Mute' : 'Unmute'}>
+                {isAudioEnabled ? <Mic /> : <MicOff />}
+              </button>
+              <button onClick={toggleVideo} className={`control-button ${!isVideoEnabled ? 'disabled' : ''}`} disabled={isScreenSharing} title={isVideoEnabled ? 'Turn off camera' : 'Turn on camera'}>
+                {isVideoEnabled ? <Video /> : <VideoOff />}
+              </button>
+              <button onClick={toggleScreenShare} className={`control-button ${isScreenSharing ? 'active' : ''}`} title={isScreenSharing ? 'Stop sharing screen' : 'Share screen'}>
+                <ScreenShare />
+              </button>
+              <button onClick={endCall} className="control-button end-call" title="End call">
+                <PhoneOff />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <DebugLogger logs={logs} isVisible={showDebugLogs} onClose={() => setShowDebugLogs(false)} />
     </div>
-  );
-};
-
-export default VideoCall;
+  )
+}
+export default VideoCall
