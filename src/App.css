@@ -1,5 +1,3 @@
-/* --- Paste this entire block into App.css --- */
-
 /* Global Styles */
 * {
   margin: 0;
@@ -55,7 +53,7 @@ body {
   justify-content: center;
   width: 4rem;
   height: 4rem;
-  background: #6d28d9; /* Purple Logo */
+  background: #6d28d9; /* Changed to match the new button color */
   border-radius: 50%;
   margin-bottom: 1rem;
 }
@@ -123,7 +121,7 @@ body {
 
 .join-button {
   width: 100%;
-  background: #6d28d9; /* Purple button */
+  background: #6d28d9; /* Changed to a deep purple */
   color: white;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
@@ -138,14 +136,13 @@ body {
 }
 
 .join-button:hover:not(:disabled) {
-  background: #5b21b6; /* Darker purple on hover */
+  background: #5b21b6; /* A slightly darker purple for hover */
 }
 
 .join-button:disabled {
-  background: #a78bfa; /* Lighter purple when disabled */
+  background: #a78bfa; /* A lighter purple for the disabled state */
   cursor: not-allowed;
 }
-
 .button-icon {
   width: 1.25rem;
   height: 1.25rem;
@@ -190,7 +187,7 @@ body {
   font-size: 0.875rem;
 }
 
-/* Video Call Layout */
+/* WhatsApp-style Video Call Layout */
 .video-call {
   width: 100vw;
   height: 100vh;
@@ -200,6 +197,7 @@ body {
   color: white;
 }
 
+/* Video Call Header - Mobile Style */
 .video-call-header {
   position: absolute;
   top: 0;
@@ -246,8 +244,13 @@ body {
   animation: pulse 2s infinite;
 }
 
-.connection-indicator.connecting { background: #f59e0b; }
-.connection-indicator.disconnected { background: #ef4444; }
+.connection-indicator.connecting {
+  background: #f59e0b;
+}
+
+.connection-indicator.disconnected {
+  background: #ef4444;
+}
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
@@ -277,10 +280,22 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Main Video Content - Full Screen */
+.video-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .main-video-area {
   width: 100%;
   height: 100%;
-  background: #000;
+  background: #1a0d2e;
   position: relative;
   display: flex;
   align-items: center;
@@ -288,13 +303,39 @@ body {
   overflow: hidden;
 }
 
+.main-video-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 40%, rgba(139, 92, 246, 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(167, 139, 250, 0.2) 0%, transparent 50%),
+              radial-gradient(circle at 40% 80%, rgba(124, 58, 237, 0.2) 0%, transparent 50%);
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Remote Video - Full Screen */
+.remote-video-fullscreen {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
 .remote-video-fullscreen .video-element {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Changed from cover to contain */
-  background: #000;
+  object-fit: contain; /* This fits the video without cropping */
+  background: #000; /* Black background for letterboxing */
 }
 
+/* Waiting State - Center of Screen */
 .waiting-state {
   position: absolute;
   top: 50%;
@@ -329,8 +370,19 @@ body {
   60% { transform: translateY(-5px); }
 }
 
-.waiting-state h3 { font-size: 28px; font-weight: 600; margin: 0; }
-.waiting-state p { font-size: 18px; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.6; }
+.waiting-state h3 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.waiting-state p {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  line-height: 1.6;
+}
+
 .waiting-state strong {
   color: #a855f7;
   background: rgba(168, 85, 247, 0.2);
@@ -340,125 +392,235 @@ body {
   font-size: 20px;
 }
 
-.pip-container {
+/* Self Video - WhatsApp Style Overlay */
+.local-video-pip {
   position: absolute;
   top: 80px;
   right: 20px;
-  z-index: 25;
-}
-
-.local-video-pip {
-  position: relative;
   width: 120px;
   height: 160px;
   background: linear-gradient(135deg, #2d1b3d, #4a2e5c);
   border-radius: 12px;
   border: 2px solid rgba(139, 92, 246, 0.5);
   overflow: hidden;
+  z-index: 25;
   transition: all 0.3s ease;
   cursor: pointer;
 }
-.local-video-pip.dragging {
-  transition: none;
-}
+
 .local-video-pip:hover {
   transform: scale(1.05);
   border-color: rgba(139, 92, 246, 0.8);
 }
+
 .local-video-pip .video-element {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1);
+  transform: scaleX(-1); /* Mirror effect */
 }
 
+/* Local Video Off State */
 .local-video-off {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: #374151; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  color: #9ca3af; gap: 8px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #374151;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  gap: 8px;
 }
-.local-video-off .video-off-icon { width: 32px; height: 32px; }
-.local-video-off span { font-size: 12px; font-weight: 500; }
+
+.local-video-off .video-off-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.local-video-off span {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Local Mute Indicator */
 .local-mute-indicator {
-  position: absolute; top: 8px; left: 8px;
-  background: rgba(239, 68, 68, 0.9); color: white;
-  padding: 6px; border-radius: 50%; display: flex;
-  align-items: center; justify-content: center; z-index: 26;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 26;
 }
 
+/* User Info Overlay - On Main Video */
 .user-info-overlay {
-  position: absolute; bottom: 120px; left: 20px; right: 20px;
-  z-index: 20; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
-  border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.3);
-  padding: 16px; display: flex; align-items: center; gap: 12px;
-  opacity: 1; transition: opacity 0.3s ease;
+  position: absolute;
+  bottom: 120px;
+  left: 20px;
+  right: 20px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
-.user-info-overlay.hidden { opacity: 0; pointer-events: none; }
-.user-info-avatar {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: linear-gradient(135deg, #8b5cf6, #a855f7);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: bold; color: white; flex-shrink: 0;
-}
-.user-info-details { flex: 1; }
-.user-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; color: white; }
-.user-status { font-size: 12px; opacity: 0.7; display: flex; align-items: center; gap: 6px; color: white; }
 
-.video-controls {
-  position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 30;
+.user-info-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
+
+.user-info-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-info-details {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: white;
+}
+
+.user-status {
+  font-size: 12px;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+}
+
+/* Controls - WhatsApp Style */
+.video-controls {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+}
+
 .controls-container {
-  display: flex; align-items: center; gap: 16px;
-  background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(20px);
-  padding: 16px 24px; border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+  padding: 16px 24px;
+  border-radius: 50px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .control-button {
-  width: 56px; height: 56px; border-radius: 50%; border: none;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; color: white; transition: all 0.3s ease;
-  background: rgba(75, 85, 99, 0.8); border: 2px solid rgba(255, 255, 255, 0.2);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  transition: all 0.3s ease;
+  background: rgba(75, 85, 99, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
-.control-button:hover { transform: scale(1.1); }
-.control-button.disabled { background: rgba(239, 68, 68, 0.8); border-color: rgba(239, 68, 68, 0.5); }
-.control-button.active { background: #3b82f6; border-color: rgba(59, 130, 246, 0.5); }
-.control-button.end-call { background: linear-gradient(135deg, #dc2626, #b91c1c); border-color: rgba(220, 38, 38, 0.5); }
-.control-button.end-call:hover { background: linear-gradient(135deg, #b91c1c, #991b1b); }
 
+.control-button:hover {
+  transform: scale(1.1);
+}
+
+.control-button.disabled {
+  background: rgba(239, 68, 68, 0.8);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.control-button.end-call {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border-color: rgba(220, 38, 38, 0.5);
+}
+
+.control-button.end-call:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+}
+
+/* Remote Video Off State */
 .remote-video-off {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  color: rgba(255, 255, 255, 0.8); gap: 16px; z-index: 15;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.8);
+  gap: 16px;
+  z-index: 15;
 }
-.remote-video-off .video-off-icon { width: 64px; height: 64px; opacity: 0.6; }
-.remote-video-off p { font-size: 18px; font-weight: 500; }
 
+.remote-video-off .video-off-icon {
+  width: 64px;
+  height: 64px;
+  opacity: 0.6;
+}
+
+.remote-video-off p {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* Error Banner */
 .error-banner {
-  position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
-  background: #ef4444; color: white; padding: 12px 20px;
-  border-radius: 8px; display: flex; align-items: center; gap: 8px;
-  z-index: 35; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
-.error-banner .error-icon { width: 20px; height: 20px; }
-
-/* Call Stats in Header */
-.call-stats-container {
-  display: flex; align-items: center; gap: 16px;
-  background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 12px;
-  border-radius: 20px; font-size: 13px; font-weight: 500; color: white;
-}
-.stat-item {
-  display: flex; align-items: center; gap: 6px; opacity: 0.9;
-}
-.stat-item .lucide { width: 14px; height: 14px; opacity: 0.8; }
-
-.mobile-stats-overlay {
-  display: none; /* Hidden by default */
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ef4444;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 35;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
-/* Misc */
+.error-banner .error-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Debug Logger */
 .debug-logger {
   position: fixed;
   bottom: 20px;
@@ -476,134 +638,518 @@ body {
   z-index: 40;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
+
 .debug-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
-  border-top-left-radius: 12px; border-top-right-radius: 12px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
+
 .debug-title {
-  display: flex; align-items: center; color: #1f2937;
-  font-weight: 500; font-size: 14px;
+  display: flex;
+  align-items: center;
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 14px;
 }
-.debug-icon { width: 16px; height: 16px; margin-right: 8px; }
+
+.debug-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
 .debug-close {
-  background: none; border: none; color: #6b7280;
-  cursor: pointer; padding: 4px; border-radius: 4px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
   transition: color 0.2s;
 }
-.debug-close:hover { color: #374151; background: #f3f4f6; }
-.close-icon { width: 14px; height: 14px; }
-.debug-content {
-  flex: 1; overflow-y: auto; padding: 12px 16px;
-  line-height: 1.4; background: #ffffff;
-}
-.debug-empty { color: #6b7280; text-align: center; padding: 20px; font-style: italic; }
-.debug-log-entry { margin-bottom: 4px; color: #1f2937; }
-.debug-timestamp { color: #6b7280; margin-right: 8px; }
-.debug-message { color: #059669; }
-.debug-footer {
-  padding: 8px 16px; background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-  border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
-}
-.debug-count { color: #6b7280; font-size: 11px; }
 
-/*
-========================================
-  NEW MOBILE RESPONSIVE STYLES
-========================================
-*/
-@media (max-width: 768px) {
-  /* Hide desktop-only elements */
-  .call-stats-container,
-  .debug-toggle {
-    display: none;
+.debug-close:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.close-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.debug-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  line-height: 1.4;
+  background: #ffffff;
+}
+
+.debug-empty {
+  color: #6b7280;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+.debug-log-entry {
+  margin-bottom: 4px;
+  color: #1f2937;
+}
+
+.debug-timestamp {
+  color: #6b7280;
+  margin-right: 8px;
+}
+
+.debug-message {
+  color: #059669;
+}
+
+.debug-footer {
+  padding: 8px 16px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.debug-count {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+/* MOBILE RESPONSIVE STYLES */
+
+/* Tablet View */
+@media (max-width: 1024px) {
+  .debug-logger {
+    width: 300px;
+    height: 180px;
   }
-  
-  /* Simplify header */
+}
+
+/* Mobile View */
+@media (max-width: 768px) {
   .video-call-header {
-    background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
     padding: 12px 16px;
   }
-  
-  /* Reposition PiP to bottom left */
-  .pip-container {
-    top: auto;
-    right: auto;
-    bottom: 110px; /* Position above the controls */
-    left: 16px;
-    transform: none; /* Disable dragging transform on mobile */
+
+  .room-id {
+    font-size: 13px;
+    padding: 6px 10px;
   }
 
-  /* Style the PiP video for mobile */
+  .connection-state {
+    font-size: 11px;
+  }
+
   .local-video-pip {
-    width: 90px;
-    height: 120px;
-    border-radius: 12px;
-    cursor: default;
-    transform: none !important; /* Override hover/drag transforms */
+    top: 60px;
+    right: 12px;
+    width: 100px;
+    height: 133px;
   }
 
-  /* Style and show the mobile stats overlay */
-  .mobile-stats-overlay {
-    display: flex;
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    right: 6px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 8px;
-    padding: 3px 5px;
-    font-size: 9px;
-    gap: 6px;
-    color: white;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .mobile-stats-overlay .stat-item {
-    gap: 3px;
-  }
-  .mobile-stats-overlay .lucide {
-    width: 10px;
-    height: 10px;
-  }
-
-  /* Adjust user info overlay position */
   .user-info-overlay {
-    bottom: 110px;
-    left: 16px;
-    right: 16px;
+    bottom: 100px;
+    left: 12px;
+    right: 12px;
     padding: 12px;
   }
 
-  /* New mobile controls layout */
-  .video-controls {
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    transform: none;
-    padding: 20px;
-    background: linear-gradient(360deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  .user-info-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-name {
+    font-size: 14px;
+  }
+
+  .user-status {
+    font-size: 11px;
   }
 
   .controls-container {
-    padding: 0;
-    background: none;
-    backdrop-filter: none;
-    border: none;
-    justify-content: center;
-    gap: 24px;
+    padding: 14px 20px;
+    gap: 14px;
   }
 
   .control-button {
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+
+  .waiting-state h3 {
+    font-size: 24px;
+  }
+
+  .waiting-state p {
+    font-size: 16px;
+  }
+
+  .waiting-icon {
+    width: 70px;
+    height: 70px;
+  }
+
+  .debug-logger {
+    width: calc(100vw - 24px);
+    height: 150px;
+    left: 12px;
+    bottom: 12px;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .video-call-header {
+    padding: 10px 12px;
+  }
+
+  .room-id {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .connection-state {
+    font-size: 10px;
+  }
+
+  .local-video-pip {
+    width: 85px;
+    height: 113px;
+    min-width: 60px;
+    min-height: 80px;
+    max-width: 120px;
+    max-height: 160px;
+  }
+
+  .local-video-pip::after {
+    width: 8px;
+    height: 8px;
+    bottom: 2px;
+    right: 2px;
+  }
+
+  .user-info-overlay {
+    bottom: 80px;
+    left: 8px;
+    right: 8px;
+    padding: 10px;
+  }
+
+  .user-info-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .user-status {
+    font-size: 10px;
+  }
+
+  .controls-container {
+    padding: 12px 18px;
+    gap: 12px;
+  }
+
+  .control-button {
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+  }
+
+  .waiting-state h3 {
+    font-size: 20px;
+  }
+
+  .waiting-state p {
+    font-size: 14px;
+  }
+
+  .waiting-icon {
     width: 60px;
     height: 60px;
   }
 
-  .control-button.end-call {
-    width: 70px;
-    height: 70px;
+  .debug-logger {
+    width: calc(100vw - 16px);
+    height: 140px;
+    left: 8px;
+    bottom: 8px;
   }
+}
+
+/* Extra Small Mobile */
+@media (max-width: 360px) {
+  .video-call-header {
+    padding: 8px 10px;
+  }
+
+  .room-id {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .local-video-pip {
+    top: 45px;
+    right: 6px;
+    width: 75px;
+    height: 100px;
+  }
+
+  .user-info-overlay {
+    bottom: 70px;
+    left: 6px;
+    right: 6px;
+    padding: 8px;
+  }
+
+  .controls-container {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .control-button {
+    width: 44px;
+    height: 44px;
+    font-size: 14px;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0; 
+    transform: translateX(100px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+.waiting-state {
+  animation: fadeIn 0.5s ease;
+}
+
+.local-video-pip {
+  animation: slideIn 0.4s ease;
+}
+
+.user-info-overlay {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Focus States for Accessibility */
+.control-button:focus-visible {
+  outline: 2px solid #a855f7;
+  outline-offset: 2px;
+}
+
+.debug-toggle:focus-visible {
+  outline: 2px solid #a855f7;
+  outline-offset: 1px;
+}
+
+/* Better hover effects for desktop */
+@media (hover: hover) and (pointer: fine) {
+  .local-video-pip:hover {
+    border-color: rgba(168, 85, 247, 0.8);
+    transform: scale(1.02);
+  }
+  
+  .control-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .control-button.end-call:hover {
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .control-button {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  .local-video-pip {
+    cursor: default;
+  }
+  
+  .debug-toggle {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .video-call {
+    background: #000000;
+  }
+  
+  .control-button {
+    border: 2px solid #ffffff;
+  }
+  
+  .user-info-overlay {
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .waiting-icon,
+  .connection-indicator,
+  .main-video-area::before {
+    animation: none;
+  }
+  
+  .local-video-pip,
+  .user-info-overlay,
+  .waiting-state {
+    animation: none;
+  }
+  
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark theme is default, but adding light theme support for future */
+@media (prefers-color-scheme: light) {
+  /* Currently using dark theme by default as requested */
+  /* Light theme can be added here if needed in the future */
+}
+
+/* Landscape orientation optimizations for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .video-call-header {
+    padding: 8px 12px;
+  }
+  
+  .local-video-pip {
+    top: 45px;
+    width: 91px;
+    height: 120px;
+  }
+  
+  .user-info-overlay {
+    bottom: 60px;
+  }
+  
+  .video-controls {
+    bottom: 15px;
+  }
+  
+  .waiting-state h3 {
+    font-size: 22px;
+  }
+  
+  .waiting-state p {
+    font-size: 15px;
+  }
+}
+.local-video-pip.dragging {
+  transition: none; /* Disable transition during drag for a snappy response */
+}
+/* New styles for Stats and Screen Share */
+.user-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-item .lucide {
+  width: 12px;
+  height: 12px;
+}
+
+.control-button.active {
+  background: #3b82f6; /* A blue color to indicate active state */
+  border-color: rgba(59, 130, 246, 0.5);
+}
+/* ADD THESE NEW STYLES for the permanent stats display */
+.call-stats-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.9;
+}
+
+.stat-item .lucide {
+  width: 14px;
+  height: 14px;
+  opacity: 0.8;
 }
