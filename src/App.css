@@ -351,21 +351,6 @@ body {
   z-index: 10;
 }
 
-@keyframes pulse-icon {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 15px 35px rgba(139, 92, 246, 0.4);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
-  }
-}
-
 .waiting-icon {
   width: 80px;
   height: 80px;
@@ -375,10 +360,29 @@ body {
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
-  animation: pulse-icon 2s infinite ease-in-out; /* Changed from bounce to pulse-icon */
+  /* UPDATED: Circular box-shadow and new animation for shadow */
+  box-shadow: 0 0 0px 0px rgba(139, 92, 246, 0.3); /* Initial state for animation */
+  animation: pulse-icon 2s infinite ease-in-out;
 }
 
+/* UPDATED: pulse-icon keyframes for a circular shadow effect */
+@keyframes pulse-icon {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 10px 5px rgba(139, 92, 246, 0.5), /* Inner subtle glow */
+                0 0 20px 10px rgba(139, 92, 246, 0.3); /* Outer softer glow */
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px 8px rgba(139, 92, 246, 0.6), /* Stronger inner glow */
+                0 0 30px 15px rgba(139, 92, 246, 0.4); /* Stronger outer glow */
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px 5px rgba(139, 92, 246, 0.5),
+                0 0 20px 10px rgba(139, 92, 246, 0.3);
+  }
+}
 .waiting-state h3 {
   font-size: 28px;
   font-weight: 600;
