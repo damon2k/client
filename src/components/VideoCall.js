@@ -509,8 +509,18 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
             )}
           </div>
           
-          {/* Local Video - PiP Style */}
-          <div className="local-video-pip">
+          {/* Local Video - Draggable PiP Style */}
+          <div 
+            ref={localVideoPipRef}
+            className={`local-video-pip ${isDragging ? 'dragging' : ''}`}
+            style={{
+              right: 'auto',
+              left: `${pipPosition.x}px`,
+              top: `${pipPosition.y}px`
+            }}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+          >
             <video
               ref={localVideoRef}
               autoPlay

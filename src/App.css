@@ -827,10 +827,19 @@ body {
   }
 
   .local-video-pip {
-    top: 50px;
-    right: 8px;
     width: 85px;
     height: 113px;
+    min-width: 60px;
+    min-height: 80px;
+    max-width: 120px;
+    max-height: 160px;
+  }
+
+  .local-video-pip::after {
+    width: 8px;
+    height: 8px;
+    bottom: 2px;
+    right: 2px;
   }
 
   .user-info-overlay {
