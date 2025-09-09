@@ -1099,3 +1099,6 @@ body {
     font-size: 15px;
   }
 }
+.local-video-pip.dragging {
+  transition: none; /* Disable transition during drag for a snappy response */
+}
