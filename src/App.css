@@ -121,7 +121,7 @@ body {
 
 .join-button {
   width: 100%;
-  background: #3b82f6;
+  background: #6d28d9; /* Changed to a deep purple */
   color: white;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
@@ -136,14 +136,13 @@ body {
 }
 
 .join-button:hover:not(:disabled) {
-  background: #2563eb;
+  background: #5b21b6; /* A slightly darker purple for hover */
 }
 
 .join-button:disabled {
-  background: #60a5fa;
+  background: #a78bfa; /* A lighter purple for the disabled state */
   cursor: not-allowed;
 }
-
 .button-icon {
   width: 1.25rem;
   height: 1.25rem;
