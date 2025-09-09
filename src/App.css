@@ -188,17 +188,16 @@ body {
   font-size: 0.875rem;
 }
 
-/* Video Call Styles - Box Layout */
-.video-call {
+/* FaceTime Style Video Call */
+.video-call.facetime-style {
   position: relative;
   width: 100%;
   height: 100vh;
-  background: #202124;
-  display: flex;
-  flex-direction: column;
+  background: #000000;
   overflow: hidden;
 }
 
+/* Header - Original styles maintained */
 .video-call-header {
   position: absolute;
   top: 20px;
@@ -272,154 +271,78 @@ body {
   height: 20px;
 }
 
-/* Video Grid Container - Centered Box Layout */
-.video-grid {
-  position: relative;
-  flex: 1;
+/* Full Screen Remote Video */
+.remote-video-fullscreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #1a1a1a;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 100px 40px 120px 40px;
-  gap: 30px;
-  flex-wrap: wrap;
 }
 
-/* Video Container Base Styles */
-.video-container {
-  position: relative;
-  width: 400px;
-  height: 300px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #1a1a1a;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Speaking Animation - Purple Glow */
-.video-container.speaking {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 30px rgba(139, 92, 246, 0.6), 0 8px 24px rgba(0, 0, 0, 0.3);
-  animation: speakingGlow 1.5s ease-in-out infinite alternate;
-}
-
-@keyframes speakingGlow {
-  0% { 
-    border-color: #8b5cf6;
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.6), 0 8px 24px rgba(0, 0, 0, 0.3);
-  }
-  100% { 
-    border-color: #a855f7;
-    box-shadow: 0 0 40px rgba(168, 85, 247, 0.8), 0 8px 32px rgba(0, 0, 0, 0.4);
-  }
-}
-
-.video-container:hover {
-  transform: scale(1.02);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-}
-
-.video-element {
+.remote-video-fullscreen .video-element {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #1a1a1a;
+  background: #000000;
 }
 
-.local-video .video-element {
-  transform: scaleX(-1); /* Mirror effect for local video */
-}
-
-.video-placeholder {
+/* Remote Video Info Overlay */
+.remote-video-info {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 100px;
+  right: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  color: #9ca3af;
-  text-align: center;
-}
-
-.placeholder-icon {
-  width: 48px;
-  height: 48px;
-  color: #6b7280;
-}
-
-.placeholder-text {
-  font-size: 16px;
-  margin: 0;
-  color: #9ca3af;
-}
-
-/* Video Overlay Info */
-.video-info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
-  padding: 12px;
-  display: flex;
-  justify-content: space-between;
   align-items: flex-end;
+  gap: 10px;
+  z-index: 5;
 }
 
-.video-label {
+.quality-info {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  padding: 8px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
   color: white;
-  font-size: 14px;
   font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.resolution, .framerate {
+  color: #ffffff;
+}
+
+.bandwidth {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.network-indicator {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.video-stats {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Mute Indicator */
-.mute-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: rgba(239, 68, 68, 0.9);
-  border-radius: 50%;
-  color: white;
-}
-
-.mute-indicator svg {
-  width: 12px;
-  height: 12px;
-}
-
-/* Network Strength Indicator */
-.network-indicator {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: white;
-  font-size: 12px;
-}
-
 .network-bars {
   display: flex;
   align-items: flex-end;
-  gap: 1px;
-  height: 12px;
+  gap: 2px;
+  height: 14px;
 }
 
 .network-bar {
-  width: 2px;
-  background: #6b7280;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 1px;
   transition: background-color 0.3s;
 }
 
@@ -427,53 +350,207 @@ body {
   background: #10b981;
 }
 
-.network-bar:nth-child(1) { height: 3px; }
-.network-bar:nth-child(2) { height: 6px; }
-.network-bar:nth-child(3) { height: 9px; }
-.network-bar:nth-child(4) { height: 12px; }
+.network-bar:nth-child(1) { height: 4px; }
+.network-bar:nth-child(2) { height: 7px; }
+.network-bar:nth-child(3) { height: 10px; }
+.network-bar:nth-child(4) { height: 14px; }
 
-/* Speaking Indicator */
-.speaking-indicator {
-  position: absolute;
-  top: 12px;
-  left: 12px;
+/* Remote Mute Indicator */
+.remote-mute-indicator {
+  background: rgba(239, 68, 68, 0.9);
+  backdrop-filter: blur(20px);
+  padding: 10px;
+  border-radius: 50%;
+  color: white;
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(139, 92, 246, 0.9);
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Waiting State */
+.waiting-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   color: white;
+  text-align: center;
+  gap: 20px;
+}
+
+.waiting-icon {
+  width: 80px;
+  height: 80px;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+.waiting-state h3 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  color: #ffffff;
+}
+
+.waiting-state p {
+  font-size: 16px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.waiting-state strong {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: 6px;
+  font-family: 'Monaco', monospace;
+}
+
+/* Remote Video Off State */
+.remote-video-off {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  gap: 15px;
+}
+
+.video-off-icon {
+  width: 60px;
+  height: 60px;
+  color: #6b7280;
+}
+
+.remote-video-off p {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Picture-in-Picture Local Video */
+.local-video-pip {
+  position: absolute;
+  bottom: 120px;
+  right: 20px;
+  width: 200px;
+  height: 150px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #1a1a1a;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  transition: all 0.3s ease;
+  cursor: move;
+}
+
+.local-video-pip:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
+}
+
+.local-video-pip.minimized {
+  width: 100px;
+  height: 75px;
+  bottom: 140px;
+  right: 30px;
+}
+
+.local-video-pip .video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #1a1a1a;
+  transform: scaleX(-1); /* Mirror effect for local video */
+}
+
+/* PiP Controls */
+.pip-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.local-video-pip:hover .pip-controls {
+  opacity: 1;
+}
+
+.pip-control-btn {
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pip-control-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Local Mute Indicator */
+.local-mute-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Local Video Off Overlay */
+.local-video-off {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  gap: 8px;
+}
+
+.local-video-off .video-off-icon {
+  width: 32px;
+  height: 32px;
+  color: #6b7280;
+}
+
+.local-video-pip.minimized .local-video-off .video-off-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.local-video-off span {
   font-size: 12px;
   font-weight: 500;
-  backdrop-filter: blur(10px);
 }
 
-.speaking-wave {
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  height: 12px;
+.local-video-pip.minimized .local-video-off span {
+  font-size: 10px;
 }
 
-.speaking-wave-bar {
-  width: 2px;
-  background: white;
-  border-radius: 1px;
-  animation: speakingWave 0.8s ease-in-out infinite alternate;
-}
-
-.speaking-wave-bar:nth-child(1) { animation-delay: 0s; }
-.speaking-wave-bar:nth-child(2) { animation-delay: 0.1s; }
-.speaking-wave-bar:nth-child(3) { animation-delay: 0.2s; }
-
-@keyframes speakingWave {
-  0% { height: 4px; opacity: 0.5; }
-  100% { height: 12px; opacity: 1; }
-}
-
-/* Video Controls - Bottom Center */
-.video-controls {
+/* FaceTime Style Controls */
+.video-controls.facetime-controls {
   position: absolute;
   bottom: 30px;
   left: 50%;
@@ -636,29 +713,32 @@ body {
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .video-grid {
-    gap: 20px;
-    padding: 90px 20px 130px 20px;
+  .local-video-pip {
+    width: 180px;
+    height: 135px;
+    bottom: 110px;
+    right: 15px;
   }
   
-  .video-container {
-    width: 350px;
-    height: 263px;
+  .local-video-pip.minimized {
+    width: 90px;
+    height: 68px;
+    bottom: 125px;
+    right: 25px;
+  }
+  
+  .remote-video-info {
+    top: 90px;
+    right: 15px;
+  }
+  
+  .quality-info {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 768px) {
-  .video-grid {
-    flex-direction: column;
-    gap: 15px;
-    padding: 80px 15px 130px 15px;
-  }
-  
-  .video-container {
-    width: 300px;
-    height: 225px;
-  }
-  
   .video-call-header {
     top: 10px;
     left: 10px;
@@ -680,14 +760,47 @@ body {
     width: 20px;
     height: 20px;
   }
+  
+  .local-video-pip {
+    width: 160px;
+    height: 120px;
+    bottom: 100px;
+    right: 10px;
+  }
+  
+  .local-video-pip.minimized {
+    width: 80px;
+    height: 60px;
+    bottom: 115px;
+    right: 20px;
+  }
+  
+  .remote-video-info {
+    top: 80px;
+    right: 10px;
+  }
+  
+  .quality-info {
+    padding: 4px 8px;
+    font-size: 10px;
+    gap: 6px;
+  }
+  
+  .waiting-state h3 {
+    font-size: 20px;
+  }
+  
+  .waiting-state p {
+    font-size: 14px;
+  }
+  
+  .waiting-icon {
+    width: 60px;
+    height: 60px;
+  }
 }
 
 @media (max-width: 480px) {
-  .video-container {
-    width: 280px;
-    height: 210px;
-  }
-  
   .controls-container {
     padding: 10px 16px;
     gap: 10px;
@@ -698,12 +811,56 @@ body {
     height: 44px;
   }
   
+  .control-button svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .local-video-pip {
+    width: 140px;
+    height: 105px;
+    bottom: 90px;
+    right: 8px;
+  }
+  
+  .local-video-pip.minimized {
+    width: 70px;
+    height: 53px;
+    bottom: 105px;
+    right: 15px;
+  }
+  
   .debug-logger {
     width: calc(100vw - 2rem);
     height: 10rem;
     bottom: 6rem;
     left: 1rem;
     right: 1rem;
+  }
+  
+  .waiting-state h3 {
+    font-size: 18px;
+  }
+  
+  .waiting-state p {
+    font-size: 13px;
+  }
+  
+  .waiting-icon {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .remote-video-info {
+    top: 70px;
+    right: 8px;
+  }
+  
+  .quality-info {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
   }
 }
 
@@ -723,4 +880,56 @@ body {
 
 .debug-content::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
+}
+
+/* Additional FaceTime Polish */
+.video-call.facetime-style::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.1) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Smooth transitions for connection states */
+.remote-video-fullscreen .video-element {
+  transition: opacity 0.3s ease;
+}
+
+.waiting-state {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Enhanced hover effects */
+.local-video-pip:hover {
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
+}
+
+.control-button:active {
+  transform: scale(0.95);
+}
+
+/* Better focus states for accessibility */
+.control-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.pip-control-btn:focus-visible {
+  outline: 1px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+.debug-toggle:focus-visible {
+  outline: 1px solid #3b82f6;
+  outline-offset: 1px;
 }

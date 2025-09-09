@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Video, VideoOff, Mic, MicOff, PhoneOff, Users, AlertCircle } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, PhoneOff, Users, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
 import DebugLogger from './DebugLogger';
 
 // WebRTC Configuration with STUN and TURN servers
@@ -28,6 +28,7 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
+  const statsInterval = useRef(null);
   
   // State management
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -38,6 +39,21 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
   const [logs, setLogs] = useState([]);
   const [showDebugLogs, setShowDebugLogs] = useState(false);
   const [remoteUserConnected, setRemoteUserConnected] = useState(false);
+  const [isLocalVideoMinimized, setIsLocalVideoMinimized] = useState(false);
+  
+  // Network and quality stats
+  const [networkStats, setNetworkStats] = useState({
+    bandwidth: 0,
+    packetLoss: 0,
+    latency: 0,
+    videoResolution: '',
+    frameRate: 0,
+    networkStrength: 4 // 0-4 bars
+  });
+  
+  // Remote user states
+  const [remoteAudioEnabled, setRemoteAudioEnabled] = useState(true);
+  const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(true);
   
   // Debug logging function
   const addLog = useCallback((message, type = 'info') => {
@@ -45,6 +61,89 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     console.log(`[${timestamp}] ${message}`);
     setLogs(prev => [...prev.slice(-20), { message, timestamp, type }]);
   }, []);
+  
+  // Network strength calculation based on stats
+  const calculateNetworkStrength = useCallback((stats) => {
+    const { bandwidth, packetLoss, latency } = stats;
+    let strength = 4;
+    
+    // Reduce strength based on packet loss
+    if (packetLoss > 5) strength = Math.min(strength, 2);
+    else if (packetLoss > 2) strength = Math.min(strength, 3);
+    
+    // Reduce strength based on latency
+    if (latency > 300) strength = Math.min(strength, 1);
+    else if (latency > 150) strength = Math.min(strength, 2);
+    else if (latency > 100) strength = Math.min(strength, 3);
+    
+    // Reduce strength based on bandwidth
+    if (bandwidth < 100) strength = Math.min(strength, 1);
+    else if (bandwidth < 500) strength = Math.min(strength, 2);
+    else if (bandwidth < 1000) strength = Math.min(strength, 3);
+    
+    return Math.max(strength, 1); // Minimum 1 bar
+  }, []);
+  
+  // Get WebRTC stats
+  const getWebRTCStats = useCallback(async () => {
+    if (!peerConnectionRef.current || connectionState !== 'connected') return;
+    
+    try {
+      const stats = await peerConnectionRef.current.getStats();
+      let bandwidth = 0, packetLoss = 0, latency = 0;
+      let videoResolution = '', frameRate = 0;
+      
+      stats.forEach(report => {
+        if (report.type === 'inbound-rtp' && report.mediaType === 'video') {
+          bandwidth = Math.round((report.bytesReceived * 8) / 1000); // Convert to kbps
+          frameRate = report.framesPerSecond || 0;
+          if (report.frameWidth && report.frameHeight) {
+            videoResolution = `${report.frameWidth}x${report.frameHeight}`;
+          }
+        }
+        
+        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+          latency = report.currentRoundTripTime ? Math.round(report.currentRoundTripTime * 1000) : 0;
+        }
+        
+        if (report.type === 'transport') {
+          packetLoss = report.packetsLost ? (report.packetsLost / report.packetsSent) * 100 : 0;
+        }
+      });
+      
+      const newStats = {
+        bandwidth,
+        packetLoss: Math.round(packetLoss * 100) / 100,
+        latency,
+        videoResolution,
+        frameRate: Math.round(frameRate),
+        networkStrength: calculateNetworkStrength({ bandwidth, packetLoss, latency })
+      };
+      
+      setNetworkStats(newStats);
+    } catch (error) {
+      addLog(`Error getting WebRTC stats: ${error.message}`, 'error');
+    }
+  }, [connectionState, addLog, calculateNetworkStrength]);
+  
+  // Start stats monitoring
+  useEffect(() => {
+    if (isConnected && remoteUserConnected) {
+      statsInterval.current = setInterval(getWebRTCStats, 2000);
+      addLog('Started WebRTC stats monitoring');
+    } else {
+      if (statsInterval.current) {
+        clearInterval(statsInterval.current);
+        statsInterval.current = null;
+      }
+    }
+    
+    return () => {
+      if (statsInterval.current) {
+        clearInterval(statsInterval.current);
+      }
+    };
+  }, [isConnected, remoteUserConnected, getWebRTCStats, addLog]);
   
   // Initialize media stream
   const initializeMediaStream = useCallback(async () => {
@@ -88,7 +187,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        // Log candidate type for debugging
         const candidateStr = event.candidate.candidate;
         if (candidateStr.includes('typ relay')) {
           addLog('✅ TURN relay candidate generated!', 'success');
@@ -98,7 +196,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
           addLog('Host candidate generated');
         }
         
-        addLog('Sending ICE candidate');
         socket.emit('ice-candidate', {
           roomId,
           candidate: event.candidate
@@ -163,11 +260,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       }
     };
     
-    // Handle ICE gathering state changes
-    pc.onicegatheringstatechange = () => {
-      addLog(`ICE gathering state: ${pc.iceGatheringState}`);
-    };
-    
     return pc;
   }, [roomId, socket, addLog]);
   
@@ -227,14 +319,10 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     try {
       addLog('Starting WebRTC initialization with TURN server...');
       
-      // Get media stream first
       const stream = await initializeMediaStream();
-      
-      // Create peer connection
       const pc = createPeerConnection();
       peerConnectionRef.current = pc;
       
-      // Add local stream tracks to peer connection
       stream.getTracks().forEach(track => {
         addLog(`Adding ${track.kind} track to peer connection`);
         pc.addTrack(track, stream);
@@ -259,15 +347,13 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
     
     addLog(`Setting up socket listeners for room: ${roomId}`);
     
-    // Socket event handlers
     const handleUserJoined = (data) => {
       addLog(`User joined room: ${data.userId}`);
-      // If we're not the user who just joined, create an offer
       if (data.userId !== socket.id) {
         setTimeout(() => {
           addLog('Initiating call as the caller...');
           createOffer();
-        }, 1000); // Small delay to ensure both peers are ready
+        }, 1000);
       }
     };
     
@@ -309,53 +395,30 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       }
     };
     
-    const handleRoomError = (data) => {
-      const errorMsg = `Room error: ${data.message}`;
-      addLog(errorMsg, 'error');
-      setError(data.message);
-    };
-    
-    const handleSocketError = (error) => {
-      const errorMsg = `Socket error: ${error.message}`;
-      addLog(errorMsg, 'error');
-      setError('Connection error occurred');
-    };
-    
-    const handleConnect = () => {
-      addLog('Socket connected successfully');
-    };
-    
-    const handleDisconnect = (reason) => {
-      addLog(`Socket disconnected: ${reason}`, 'error');
-      setError('Lost connection to server');
+    const handleMediaStateChange = (data) => {
+      addLog(`Remote user media state changed: audio=${data.audio}, video=${data.video}`);
+      setRemoteAudioEnabled(data.audio);
+      setRemoteVideoEnabled(data.video);
     };
     
     // Register socket listeners
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    socket.on('error', handleSocketError);
     socket.on('user-joined', handleUserJoined);
     socket.on('offer', handleOffer);
     socket.on('answer', handleAnswer);
     socket.on('ice-candidate', handleIceCandidate);
     socket.on('user-left', handleUserLeft);
-    socket.on('room-error', handleRoomError);
+    socket.on('media-state-change', handleMediaStateChange);
     
-    // Initialize WebRTC
     initializeWebRTC();
     
-    // Cleanup function
     return () => {
       addLog('Cleaning up socket listeners...');
-      socket.off('connect', handleConnect);
-      socket.off('disconnect', handleDisconnect);
-      socket.off('error', handleSocketError);
       socket.off('user-joined', handleUserJoined);
       socket.off('offer', handleOffer);
       socket.off('answer', handleAnswer);
       socket.off('ice-candidate', handleIceCandidate);
       socket.off('user-left', handleUserLeft);
-      socket.off('room-error', handleRoomError);
+      socket.off('media-state-change', handleMediaStateChange);
     };
   }, [socket, roomId, createOffer, createAnswer, initializeWebRTC, addLog]);
   
@@ -367,9 +430,16 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
         audioTrack.enabled = !audioTrack.enabled;
         setIsAudioEnabled(audioTrack.enabled);
         addLog(`Audio ${audioTrack.enabled ? 'enabled' : 'disabled'}`);
+        
+        // Notify remote user of audio state change
+        socket.emit('media-state-change', {
+          roomId,
+          audio: audioTrack.enabled,
+          video: isVideoEnabled
+        });
       }
     }
-  }, [addLog]);
+  }, [addLog, socket, roomId, isVideoEnabled]);
   
   // Toggle video
   const toggleVideo = useCallback(() => {
@@ -379,15 +449,21 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
         addLog(`Video ${videoTrack.enabled ? 'enabled' : 'disabled'}`);
+        
+        // Notify remote user of video state change
+        socket.emit('media-state-change', {
+          roomId,
+          audio: isAudioEnabled,
+          video: videoTrack.enabled
+        });
       }
     }
-  }, [addLog]);
+  }, [addLog, socket, roomId, isAudioEnabled]);
   
   // End call
   const endCall = useCallback(() => {
     addLog('Ending call and cleaning up...');
     
-    // Stop local media tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => {
         track.stop();
@@ -395,19 +471,20 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       });
     }
     
-    // Close peer connection
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       addLog('Peer connection closed');
     }
     
-    // Leave room via socket
+    if (statsInterval.current) {
+      clearInterval(statsInterval.current);
+    }
+    
     if (socket) {
       socket.emit('leave-room', roomId);
       addLog('Left room via socket');
     }
     
-    // Reset state and leave room
     onLeaveRoom();
   }, [roomId, socket, onLeaveRoom, addLog]);
   
@@ -421,28 +498,43 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
       }
+      if (statsInterval.current) {
+        clearInterval(statsInterval.current);
+      }
     };
   }, [addLog]);
   
   // Connection status indicator
   const getConnectionStatusColor = () => {
     switch (connectionState) {
-      case 'connected': return '#10b981'; // green
-      case 'connecting': return '#f59e0b'; // yellow
-      case 'failed': return '#ef4444'; // red
-      default: return '#6b7280'; // gray
+      case 'connected': return '#10b981';
+      case 'connecting': return '#f59e0b';
+      case 'failed': return '#ef4444';
+      default: return '#6b7280';
     }
   };
   
+  // Network bars component
+  const NetworkBars = ({ strength }) => (
+    <div className="network-bars">
+      {[1, 2, 3, 4].map(bar => (
+        <div
+          key={bar}
+          className={`network-bar ${bar <= strength ? 'active' : ''}`}
+        />
+      ))}
+    </div>
+  );
+  
   return (
-    <div className="video-call">
+    <div className="video-call facetime-style">
       {/* Header */}
       <div className="video-call-header">
         <div className="room-info">
           <div 
             className="connection-indicator"
             style={{ backgroundColor: getConnectionStatusColor() }}
-          ></div>
+          />
           <span className="room-id">Room: {roomId}</span>
           <span className="connection-state">({connectionState})</span>
         </div>
@@ -462,51 +554,96 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
         </div>
       )}
       
-      {/* Video Grid */}
-      <div className="video-grid">
-        {/* Local Video */}
-        <div className="video-container local-video">
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            playsInline
-            className="video-element"
-          />
-          <div className="video-label">
-            You {!isVideoEnabled && '(Video Off)'}
-          </div>
-          {!isVideoEnabled && (
-            <div className="video-placeholder">
-              <VideoOff className="placeholder-icon" />
+      {/* Full Screen Remote Video */}
+      <div className="remote-video-fullscreen">
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          playsInline
+          className="video-element"
+        />
+        
+        {/* Remote video info overlay */}
+        {remoteUserConnected && (
+          <div className="remote-video-info">
+            <div className="quality-info">
+              {networkStats.videoResolution && (
+                <span className="resolution">{networkStats.videoResolution}</span>
+              )}
+              {networkStats.frameRate > 0 && (
+                <span className="framerate">{networkStats.frameRate} fps</span>
+              )}
+              <div className="network-indicator">
+                <NetworkBars strength={networkStats.networkStrength} />
+                <span className="bandwidth">{networkStats.bandwidth} kbps</span>
+              </div>
             </div>
-          )}
+            
+            {!remoteAudioEnabled && (
+              <div className="remote-mute-indicator">
+                <MicOff size={24} />
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Waiting state */}
+        {!remoteUserConnected && (
+          <div className="waiting-state">
+            <Users className="waiting-icon" />
+            <h3>Waiting for another user to join...</h3>
+            <p>Share the room ID: <strong>{roomId}</strong></p>
+          </div>
+        )}
+        
+        {remoteUserConnected && !remoteVideoEnabled && (
+          <div className="remote-video-off">
+            <VideoOff className="video-off-icon" />
+            <p>Camera is off</p>
+          </div>
+        )}
+      </div>
+      
+      {/* Picture-in-Picture Local Video */}
+      <div className={`local-video-pip ${isLocalVideoMinimized ? 'minimized' : ''}`}>
+        <video
+          ref={localVideoRef}
+          autoPlay
+          muted
+          playsInline
+          className="video-element"
+        />
+        
+        {/* Local video controls */}
+        <div className="pip-controls">
+          <button 
+            onClick={() => setIsLocalVideoMinimized(!isLocalVideoMinimized)}
+            className="pip-control-btn"
+            title={isLocalVideoMinimized ? 'Expand' : 'Minimize'}
+          >
+            {isLocalVideoMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+          </button>
         </div>
         
-        {/* Remote Video */}
-        <div className="video-container remote-video">
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            playsInline
-            className="video-element"
-          />
-          <div className="video-label">
-            {remoteUserConnected ? 'Remote User' : 'Waiting for user...'}
+        {/* Local mute indicator */}
+        {!isAudioEnabled && (
+          <div className="local-mute-indicator">
+            <MicOff size={20} />
           </div>
-          {!remoteUserConnected && (
-            <div className="video-placeholder">
-              <Users className="placeholder-icon" />
-              <p className="placeholder-text">Waiting for another user to join...</p>
-            </div>
-          )}
-        </div>
+        )}
+        
+        {/* Video off overlay */}
+        {!isVideoEnabled && (
+          <div className="local-video-off">
+            <VideoOff className="video-off-icon" />
+            <span>You</span>
+          </div>
+        )}
       </div>
       
       {/* Controls */}
-      <div className="video-controls">
+      <div className="video-controls facetime-controls">
         <div className="controls-container">
-          {/* Audio Toggle */}
           <button
             onClick={toggleAudio}
             className={`control-button ${!isAudioEnabled ? 'disabled' : ''}`}
@@ -515,7 +652,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
             {isAudioEnabled ? <Mic /> : <MicOff />}
           </button>
           
-          {/* Video Toggle */}
           <button
             onClick={toggleVideo}
             className={`control-button ${!isVideoEnabled ? 'disabled' : ''}`}
@@ -524,7 +660,6 @@ const VideoCall = ({ roomId, onLeaveRoom, socket }) => {
             {isVideoEnabled ? <Video /> : <VideoOff />}
           </button>
           
-          {/* End Call */}
           <button
             onClick={endCall}
             className="control-button end-call"
