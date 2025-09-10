@@ -18,7 +18,7 @@ const App = () => {
     try {
       // Connect to Socket.io server
       const socketConnection = io('https://backend-production-10d7.up.railway.app', {
-        transports: ['websocket', 'polling'],
+        transports: ['websocket'],
         timeout: 20000,
         reconnection: true,
         reconnectionAttempts: 3,
